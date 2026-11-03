@@ -1,0 +1,16 @@
+{
+  "Remote-Lab": "b3e574bcf11379b4a0c08ca6ecd60cfaf5f1ba12",
+  "Apple Unity Plugins": "96e4a044572450e9e02757900d2b1d2a390016de",
+  "embeddedUnityPackages": [
+    "com.unity.editorcoroutines",
+    "com.unity.inputsystem",
+    "com.unity.mathematics",
+    "com.unity.ugui",
+    "com.unity.xr.arfoundation",
+    "com.unity.xr.core-utils",
+    "com.unity.xr.interaction.toolkit",
+    "com.unity.xr.legacyinputhelpers",
+    "com.unity.xr.management",
+    "com.unity.xr.visionos"
+  ]
+}
