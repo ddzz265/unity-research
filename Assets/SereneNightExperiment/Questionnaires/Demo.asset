@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ec13901d0b62ef4a83c0e01625355a4, type: 3}
+  m_Name: Demo
+  m_EditorClassIdentifier: Assembly-CSharp::QuestionnaireContent
+  questionnaireQuestions:
+  - question: How easy is it to select an answer with the controller ray?
+    choicesType: 1
+    choiceLabels:
+    - Easy
+    - Neutral
+    - Difficult
+    minScore: 0
+    maxScore: 0
+    wholeNumber: 0
+    labelForMinScore: 
+    labelForMaxScore: 
+    canSkipQuestion: 0
+  - question: Which controls did you use? (Select all that apply)
+    choicesType: 2
+    choiceLabels:
+    - Left controller
+    - Right controller
+    - Mouse preview
+    minScore: 0
+    maxScore: 0
+    wholeNumber: 0
+    labelForMinScore: 
+    labelForMaxScore: 
+    canSkipQuestion: 0
+  - question: How comfortable was the experience?
+    choicesType: 3
+    choiceLabels: []
+    minScore: 0
+    maxScore: 10
+    wholeNumber: 1
+    labelForMinScore: 0 - Not comfortable
+    labelForMaxScore: 10 - Very comfortable
+    canSkipQuestion: 1

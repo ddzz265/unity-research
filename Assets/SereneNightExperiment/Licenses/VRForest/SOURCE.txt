@@ -1,0 +1,6 @@
+Forest: https://github.com/igor-lirussi/VR-Forest
+Commit: 6f16c304dfbe0ea695f0a2b165bbc4a6dcf89ee0
+Original forest, terrain layers, models, animal animator assets retained. Legacy SteamVR-specific scripts removed for current rig. URP materials and wind adaptation, slow guided route and audio-duration experiment integration added. Third-party art assets retain their original terms.
+Music: https://pixabay.com/music/ambient-free-soul-15-minutes-healing-tibetan-bowl-style-sounds-with-birds-485738/
+Author: kalsstockmedia. Original MP3 supplied by the user; bundled unchanged. Plays once at original speed; runtime duration follows clip samples/frequency.
+MP3 SHA256: 7e115ad35d89c89cd0a8bfa24be72aa4ec827122f47ef3502bf4c4c305909a65

@@ -1,0 +1,4 @@
+Source: https://github.com/Rudra-RNC/Acrophobia
+Commit: a4e8e30e54fc3ec3f2225e2f3653ae097de017af
+Original geometry, glass shader, materials and environment retained. Source-only scripts and UI removed. Six damaged terrain assets replaced with intact upstream New Terrain.asset. Mirror bridges use upstream Glass_Bridge material. Runtime and questionnaire integration by local project.
+Upstream README requests contacting the author before publication or derivative research. Third-party assets retain their original terms.
