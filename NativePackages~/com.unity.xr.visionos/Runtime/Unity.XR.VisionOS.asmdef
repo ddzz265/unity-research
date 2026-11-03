@@ -1,0 +1,67 @@
+{
+    "name": "Unity.XR.VisionOS",
+    "rootNamespace": "",
+    "references": [
+        "Unity.XR.ARSubsystems",
+        "Unity.XR.Management",
+        "Unity.XR.Hands",
+        "Unity.InputSystem",
+        "Unity.XR.Interaction.Toolkit",
+        "Unity.PolySpatial",
+        "Unity.PolySpatial.Core",
+        "Unity.XR.CoreUtils"
+    ],
+    "includePlatforms": [
+        "Editor",
+        "VisionOS"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.xr.hands",
+            "expression": "1.0.0-pre.1",
+            "define": "INCLUDE_UNITY_XR_HANDS"
+        },
+        {
+            "name": "com.unity.xr.hands",
+            "expression": "1.1.0",
+            "define": "INCLUDE_UNITY_XR_HANDS_1_1"
+        },
+        {
+            "name": "com.unity.inputsystem",
+            "expression": "1.0.0",
+            "define": "INCLUDE_UNITY_INPUT_SYSTEM"
+        },
+        {
+            "name": "com.unity.xr.interaction.toolkit",
+            "expression": "1.0.0",
+            "define": "INCLUDE_UNITY_XRI"
+        },
+        {
+            "name": "com.unity.polyspatial",
+            "expression": "2.0.0-pre.9",
+            "define": "INCLUDE_UNITY_POLYSPATIAL"
+        },
+        {
+            "name": "com.unity.modules.xr",
+            "expression": "1.0.0",
+            "define": "UNITY_INPUT_SYSTEM_ENABLE_XR"
+        },
+        {
+            "name": "com.unity.xr.arfoundation",
+            "expression": "6.5.0",
+            "define": "ARFOUNDATION_6_5_OR_NEWER"
+        },
+        {
+            "name": "com.unity.xr.arfoundation",
+            "expression": "6.6.0-pre.0",
+            "define": "ARFOUNDATION_6_6_OR_NEWER"
+        }
+    ],
+    "noEngineReferences": false
+}

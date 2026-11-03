@@ -1,0 +1,43 @@
+{
+    "name": "Unity.XR.VisionOS.Tests",
+    "rootNamespace": "",
+    "references": [
+        "Unity.XR.VisionOS",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [
+        {
+            "name": "Unity",
+            "expression": "6000.0.26",
+            "define": "UNITY_VISIONOS_METAL_PAUSE_MESSAGE_SUPPORT"
+        },
+        {
+            "name": "Unity",
+            "expression": "6000.0.50f1",
+            "define": "UNITY_VISIONOS_RUN_IN_BACKGROUND_SUPPORT"
+        },
+        {
+            "name": "Unity",
+            "expression": "6000.1.4f1",
+            "define": "UNITY_VISIONOS_RUN_IN_BACKGROUND_SUPPORT"
+        },
+        {
+            "name": "Unity",
+            "expression": "6000.2.0a11",
+            "define": "UNITY_VISIONOS_RUN_IN_BACKGROUND_SUPPORT"
+        }
+    ],
+    "noEngineReferences": false
+}
