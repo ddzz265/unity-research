@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 7c709ae7849c5704b8724483a0fb21a4
+ScriptedImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 2
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+  script: {fileID: 11500000, guid: 715df9372183c47e389bb6e19fbc3b52, type: 3}
+  reverseAxis: 0
+  renderPipeline: 0
+  importSettings:
+    nodeNameMethod: 1
+    animationMethod: 2
+    generateMipMaps: 1
+    texturesReadable: 0
+    anisotropicFilterLevel: 1
