@@ -49,6 +49,8 @@
     "com.unity.xr.core-utils": "2.6.0",
     "com.unity.xr.legacyinputhelpers": "3.0.1",
     "com.unity.mathematics": "1.4.0",
-    "com.unity.cloud.gltfast": "6.20.0"
+    "com.unity.cloud.gltfast": "6.20.0",
+    "com.unity.xr.openxr": "1.16.1",
+    "com.unity.xr.management": "4.4.0"
   }
 }

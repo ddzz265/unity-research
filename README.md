@@ -15,6 +15,16 @@ Assets, Packages, ProjectSettings, NativePackages~ and ThirdParty~ are included.
 
 For Mac/visionOS native plugin preparation, inspect the included `prepare-mac.command` and the third-party README files. That step requires the appropriate Xcode and visionOS SDK.
 
+## Quest Pro standalone setup
+
+The Android controller/head-tracking fixes and rendering changes are included in this revision. On the build computer:
+
+1. Install Android Build Support (SDK/NDK and OpenJDK) for Unity **6000.5.10f1** and let Package Manager resolve the OpenXR dependencies.
+2. Run **Serene Night > Configure Quest Pro (Android)**.
+3. Switch Build Profiles to Android, run XR Project Validation, and select the intended experiment scene before building.
+
+See [Quest Pro setup, changes and device validation](docs/QuestPro-setup.md) for details. Runtime C# compilation was checked for desktop and Android conditional paths; full Android import/build and Quest Pro performance measurements remain to be done on the build computer/device. D/E/F groups still require a real inhalation sensor; controller input does not simulate inhalation.
+
 ## Sync changes
 
 Before starting work, Fetch/Pull in GitHub Desktop. After saving your changes in Unity, Commit and Push in GitHub Desktop. Avoid editing the same scene on both computers at the same time.

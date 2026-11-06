@@ -45,7 +45,7 @@ public class QuestionnaireView : MonoBehaviour
         if(!showOnStart)yield break;
         Prepare();
         if(!panel)yield break;
-#if UNITY_VISIONOS && !UNITY_EDITOR
+#if (UNITY_VISIONOS || UNITY_ANDROID) && !UNITY_EDITOR
         // Wait for a tracked camera before placing the panel in the world.
         while(true) {
             var head=UnityEngine.XR.InputDevices.GetDeviceAtXRNode(UnityEngine.XR.XRNode.Head);

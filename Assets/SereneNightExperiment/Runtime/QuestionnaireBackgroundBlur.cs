@@ -26,6 +26,12 @@ public sealed class QuestionnaireBackgroundBlur : MonoBehaviour
         if(stack==null) {Debug.LogError("The forest renderer must support camera stacking.",this);return false;}
         worldCamera=camera;savedMask=camera.cullingMask;
         worldData.renderPostProcessing=true;worldData.requiresDepthTexture=true;
+#if UNITY_ANDROID && !UNITY_EDITOR
+        // Keep expensive world passes off during playback; enable only for C/F blur.
+        worldData.antialiasing=AntialiasingMode.None;
+        worldData.requiresColorTexture=false;
+        camera.allowHDR=false;
+#endif
         worldData.volumeLayerMask|=1;
         var go=new GameObject("Questionnaire UI Camera");
         go.transform.SetParent(camera.transform,false);
@@ -34,6 +40,8 @@ public sealed class QuestionnaireBackgroundBlur : MonoBehaviour
         var uiData=uiCamera.GetUniversalAdditionalCameraData();
         uiData.renderType=CameraRenderType.Overlay;
         uiData.renderPostProcessing=false;uiData.renderShadows=false;
+        uiData.requiresDepthTexture=false;uiData.requiresColorTexture=false;
+        uiData.antialiasing=AntialiasingMode.None;
         camera.cullingMask=savedMask & ~uiCamera.cullingMask;
         stack.Add(uiCamera);
 
@@ -52,6 +60,9 @@ public sealed class QuestionnaireBackgroundBlur : MonoBehaviour
     public void SetBlur(bool enabled)
     {
         if(depthOfField)depthOfField.mode.value=enabled?DepthOfFieldMode.Gaussian:DepthOfFieldMode.Off;
+#if UNITY_ANDROID && !UNITY_EDITOR
+        if(worldData) {worldData.renderPostProcessing=enabled;worldData.requiresDepthTexture=enabled;}
+#endif
     }
     void LateUpdate()
     {
