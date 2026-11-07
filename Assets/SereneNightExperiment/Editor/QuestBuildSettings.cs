@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using UnityEditor;
 using UnityEditor.Build;
@@ -70,6 +70,27 @@ public sealed class QuestBuildSettings : IPreprocessBuildWithReport
         EditorUtility.SetDirty(settings);EditorUtility.SetDirty(quest);EditorUtility.SetDirty(touch);EditorUtility.SetDirty(pro);
         AssetDatabase.SaveAssets();
         Debug.Log("QUEST_CONFIGURATION_SAVED: OpenXR, Quest Pro, Touch Pro/Touch, ARM64 IL2CPP, Vulkan, single pass. Switch Build Profiles to Android and run Project Validation before building.");
+    }
+
+    [MenuItem("Serene Night/Configure Quest Pro Link (Windows)")]
+    public static void ConfigureLink()
+    {
+        if(!EditorBuildSettings.TryGetConfigObject(XRGeneralSettings.k_SettingsKey,out XRGeneralSettingsPerBuildTarget container)) {
+            container=AssetDatabase.LoadAssetAtPath<XRGeneralSettingsPerBuildTarget>(Folder+"/XRGeneralSettings.asset");
+            if(!container){container=ScriptableObject.CreateInstance<XRGeneralSettingsPerBuildTarget>();AssetDatabase.CreateAsset(container,Folder+"/XRGeneralSettings.asset");}
+            EditorBuildSettings.AddConfigObject(XRGeneralSettings.k_SettingsKey,container,true);
+        }
+        if(!container.HasSettingsForBuildTarget(BuildTargetGroup.Standalone))container.CreateDefaultSettingsForBuildTarget(BuildTargetGroup.Standalone);
+        if(!container.HasManagerSettingsForBuildTarget(BuildTargetGroup.Standalone))container.CreateDefaultManagerSettingsForBuildTarget(BuildTargetGroup.Standalone);
+        var general=container.SettingsForBuildTarget(BuildTargetGroup.Standalone);general.InitManagerOnStart=true;
+        if(!XRPackageMetadataStore.AssignLoader(general.Manager,"UnityEngine.XR.OpenXR.OpenXRLoader",BuildTargetGroup.Standalone))throw new InvalidOperationException("Could not assign the Windows OpenXR loader.");
+        FeatureHelpers.RefreshFeatures(BuildTargetGroup.Standalone);
+        var settings=OpenXRSettings.GetSettingsForBuildTargetGroup(BuildTargetGroup.Standalone);
+        settings.GetFeature<OculusTouchControllerProfile>().enabled=true;
+        settings.GetFeature<MetaQuestTouchProControllerProfile>().enabled=true;
+        EditorUtility.SetDirty(container);EditorUtility.SetDirty(general);EditorUtility.SetDirty(general.Manager);
+        EditorUtility.SetDirty(settings);EditorUtility.SetDirty(settings.GetFeature<OculusTouchControllerProfile>());EditorUtility.SetDirty(settings.GetFeature<MetaQuestTouchProControllerProfile>());
+        AssetDatabase.SaveAssets();
     }
 
     public void OnPreprocessBuild(BuildReport report)

@@ -1,4 +1,4 @@
-using AcrophobiaVR.UI;
+﻿using AcrophobiaVR.UI;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -62,11 +62,11 @@ namespace AcrophobiaVR.Navigation
         [Header("UI Panels")]
         [SerializeField]
         private List<TowerUIPanel> tierPanels = new();
-        // Local integration: wire the existing shared control panel at runtime.
-        public void ConfigurePanels(TowerUIPanel panel)
+        // Local integration: use the original fixed panel for each floor.
+        public void ConfigurePanels(IList<TowerUIPanel> panels)
         {
             tierPanels.Clear();
-            foreach (var anchor in tierAnchors) tierPanels.Add(panel);
+            tierPanels.AddRange(panels);
         }
 
         [Tooltip("The tracked camera (head) under xrOrigin — used to preserve the player's real-world offset within the play area when teleporting.")]

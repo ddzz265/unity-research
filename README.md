@@ -4,7 +4,7 @@ Unity project for the Serene Night experiment.
 
 ## Open on another computer
 
-1. Sign in to GitHub as an account with access to this private repository.
+1. Sign in to GitHub if you plan to push changes to this repository.
 2. Clone this repository with GitHub Desktop (File > Clone Repository), or run `git clone https://github.com/ddzz265/unity-research.git`.
 3. Install Unity Editor **6000.5.10f1** through Unity Hub, plus the modules required for your target platform.
 4. In Unity Hub, choose Add project from disk and select the cloned repository folder.

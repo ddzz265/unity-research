@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
@@ -56,6 +56,15 @@ public sealed class QuestionnaireBackgroundBlur : MonoBehaviour
         }
         SetBlur(false);
         return true;
+    }
+    public void SetUIVisible(bool visible)
+    {
+        if(!uiCamera || !worldData)return;
+        // An empty camera stack avoids a second render pass during audio-only therapy.
+        var stack=worldData.cameraStack;
+        if(visible) {if(!stack.Contains(uiCamera))stack.Add(uiCamera);}
+        else stack.Remove(uiCamera);
+        uiCamera.enabled=visible;
     }
     public void SetBlur(bool enabled)
     {

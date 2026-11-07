@@ -1,4 +1,4 @@
-using AcrophobiaVR.Navigation;
+﻿using AcrophobiaVR.Navigation;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -19,8 +19,8 @@ namespace AcrophobiaVR.UI
         public TMP_Text tierLabel;
 
         [Header("Labels")]
-        public string tierLabelFormat = "Tier {0} of {1}";
-        public string topTierLabelSuffix = " (top)";
+        public string tierLabelFormat = "第 {0} 层 / 共 {1} 层";
+        public string topTierLabelSuffix = "（顶层）";
 
         private void OnEnable()
         {
@@ -62,7 +62,7 @@ namespace AcrophobiaVR.UI
             if (tierLabel != null)
             {
                 string text = current < 0
-                    ? "Ground level"
+                    ? "地面层"
                     : string.Format(tierLabelFormat, current + 1, total);
 
                 if (!tierManager.HasNextTier)

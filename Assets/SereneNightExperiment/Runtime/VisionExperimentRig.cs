@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.InputSystem.XR;
 
 // Retain desktop preview and enable native head tracking on the headset.
@@ -7,9 +7,26 @@ public class VisionExperimentRig : MonoBehaviour
 {
     public TrackedPoseDriver headPose;
     public Behaviour[] desktopControls;
+    bool xrConfigured;
     void Awake()
     {
 #if UNITY_ANDROID && !UNITY_EDITOR
+        ConfigureQuestTracking();
+#endif
+#if UNITY_VISIONOS && !UNITY_EDITOR
+        foreach(var control in desktopControls)if(control)control.enabled=false;
+        if(headPose)headPose.enabled=true;
+#endif
+    }
+    void Update() {
+#if !UNITY_VISIONOS
+        if(!xrConfigured && UnityEngine.XR.XRSettings.isDeviceActive)ConfigureQuestTracking();
+#endif
+    }
+    void ConfigureQuestTracking()
+    {
+        if(xrConfigured)return;
+        xrConfigured=true;
         if(headPose) {
             // Routes move the original parent. Keep the authored eye height when
             // OpenXR's device-relative pose replaces the camera's local position.
@@ -23,11 +40,9 @@ public class VisionExperimentRig : MonoBehaviour
         SubsystemManager.GetSubsystems(inputs);
         foreach(var input in inputs)if(input.running && !input.TrySetTrackingOriginMode(UnityEngine.XR.TrackingOriginModeFlags.Device))
             Debug.LogError("Quest device-relative tracking origin could not be selected; verify eye height before using the experiment.");
-#endif
-#if (UNITY_VISIONOS || UNITY_ANDROID) && !UNITY_EDITOR
+
         foreach(var control in desktopControls)if(control)control.enabled=false;
         if(headPose)headPose.enabled=true;
         Debug.Log($"XR device model: {SystemInfo.deviceModel}; requested platform: {Application.platform}");
-#endif
     }
 }

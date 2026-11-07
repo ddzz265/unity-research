@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -26,10 +26,16 @@ public class QuestionnaireView : MonoBehaviour
     RectTransform panel, content;
     CanvasGroup presentation;
     RoundedPanel surface;
+    Image panelSkin;
+    static readonly Color Cyan = new Color(.12f,.9f,.94f,1f);
+    const string GridPath = "FloatGrids/Design System/UI Components/";
     Mask unfoldingMask;
     public Vector2 PanelSize => panel ? panel.sizeDelta : Vector2.zero;
     public float PresentationAlpha => presentation ? presentation.alpha : 0f;
-    Text status;
+    Text status, nextButtonLabel;
+    Button previousButton, nextButton;
+    readonly List<Action<bool>> radioStates = new();
+    Coroutine choiceSettling;
     QuestionnaireContent Content => questionnaires[selectedQuestionnaire];
     public static string ResponseDirectory {
         get {
@@ -93,9 +99,11 @@ public class QuestionnaireView : MonoBehaviour
             JoinedGrowth(elapsed,start,grown,620f,velocity));
         surface.radius=Mathf.Lerp(Mathf.Min(panel.sizeDelta.x,panel.sizeDelta.y)/2f,28f,
             SmootherStep((elapsed-1f)/2f));
-        var color=surface.color;
-        color.a=JoinedGrowth(elapsed,.30f,.42f,1f,.12f);
-        surface.color=color;
+        var color=panelSkin.color;
+        color.a=JoinedGrowth(elapsed,.30f,.42f,.94f,.12f);
+        panelSkin.color=color;
+        surface.color=progress<1f?Color.white:Color.clear;
+        surface.borderColor=surface.color;
         surface.SetVerticesDirty();
         // Content stays at its final size and position; only the surrounding paper grows.
         foreach(RectTransform child in content) {
@@ -145,8 +153,16 @@ public class QuestionnaireView : MonoBehaviour
             panel = go.GetComponent<RectTransform>(); panel.sizeDelta = new Vector2(1100, 620);
             panel.localScale = Vector3.one * .0016f;
             surface=go.AddComponent<RoundedPanel>();surface.radius=28;
-            surface.color = new Color(.96f, .975f, .93f, 1f);
-            unfoldingMask=go.AddComponent<Mask>();unfoldingMask.showMaskGraphic=true;unfoldingMask.enabled=false;
+            surface.color = Color.clear; surface.borderColor=Color.clear;
+            var skin=Grid("Panel/Panel Empty",panel,0,0,1100,620);
+            skin.anchorMin=Vector2.zero;skin.anchorMax=Vector2.one;skin.offsetMin=skin.offsetMax=Vector2.zero;
+            panelSkin=skin.GetComponent<Image>();panelSkin.color=new Color(.075f,.115f,.15f,.94f);
+            panelSkin.raycastTarget=false;
+            var edge=Box("Cyan rim",skin,0,0,1100,620).gameObject.AddComponent<RoundedPanel>();
+            edge.rectTransform.anchorMin=Vector2.zero;edge.rectTransform.anchorMax=Vector2.one;
+            edge.rectTransform.offsetMin=edge.rectTransform.offsetMax=Vector2.zero;
+            edge.radius=28;edge.color=Color.clear;edge.borderWidth=2;edge.borderColor=new Color(.12f,.9f,.94f,.65f);edge.raycastTarget=false;
+            unfoldingMask=go.AddComponent<Mask>();unfoldingMask.showMaskGraphic=false;unfoldingMask.enabled=false;
             content=new GameObject("Questionnaire Content",typeof(RectTransform)).GetComponent<RectTransform>();
             content.SetParent(panel,false);content.gameObject.layer=go.layer;
             content.anchorMin=content.anchorMax=content.pivot=new Vector2(.5f,.5f);
@@ -166,28 +182,98 @@ public class QuestionnaireView : MonoBehaviour
     {
         var t = Box("Label", parent ? parent : content, x,y,w,h).gameObject.AddComponent<Text>();
         t.font = font ? font : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"); t.text = text;
-        t.fontSize = size; t.color = new Color(.16f,.3f,.25f); t.alignment = TextAnchor.MiddleLeft; t.raycastTarget = false;
+        t.fontSize = size; t.color = new Color(.94f,.97f,.99f); t.alignment = TextAnchor.MiddleLeft; t.raycastTarget = false;
         t.horizontalOverflow = HorizontalWrapMode.Wrap; return t;
     }
-    Button Button(string text,float x,float y,float w,float h,Action action,bool selected=false,bool centered=false,bool settling=false)
+    RectTransform Grid(string path,Transform parent,float x,float y,float w,float h)
     {
-        var rt=Box("Button "+text,content,x,y,w,h);var image=rt.gameObject.AddComponent<RoundedPanel>();
-        image.color=selected && !settling?new Color(.25f,.46f,.36f,1):new Color(.98f,.985f,.95f,1f);
-        var b=rt.gameObject.AddComponent<Button>();b.targetGraphic=image;var colors=b.colors;
-        colors.highlightedColor=new Color(.8f,.93f,.84f);colors.pressedColor=new Color(.6f,.79f,.67f);
-        colors.selectedColor=Color.white;b.colors=colors;
-        if(settling) {
-            b.transition=Selectable.Transition.None;
-            rt.anchoredPosition3D=new Vector3(x,-y-(selected?6f:0f),selected?0f:-6f);
-        }
-        var label=Label(text,centered?0:18,0,centered?w:w-36,h,centered?34:24,rt);
-        if(centered || text=="上一题" || text=="下一题")label.alignment=TextAnchor.MiddleCenter;
-        if(selected && !settling)label.color=new Color(.98f,1,.96f);
+        var prefab=Resources.Load<GameObject>(GridPath+path);
+        if(!prefab)throw new InvalidOperationException("Missing FloatGrids prefab: "+path);
+        var rt=(RectTransform)Instantiate(prefab,parent,false).transform;
+        foreach(var t in rt.GetComponentsInChildren<Transform>(true))t.gameObject.layer=parent.gameObject.layer;
+        foreach(var layout in rt.GetComponentsInChildren<LayoutGroup>(true))layout.enabled=false;
+        foreach(var fit in rt.GetComponentsInChildren<ContentSizeFitter>(true))fit.enabled=false;
+        foreach(var graphic in rt.GetComponentsInChildren<Graphic>(true))graphic.raycastTarget=false;
+        rt.anchorMin=rt.anchorMax=rt.pivot=new Vector2(0,1);
+        rt.anchoredPosition=new Vector2(x,-y);rt.sizeDelta=new Vector2(w,h);rt.localScale=Vector3.one;
+        if(parent==content)rt.gameObject.AddComponent<CanvasGroup>();
+        return rt;
+    }
+    Button Button(string text,float x,float y,float w,float h,Action action,bool selected=false)
+    {
+        bool primary=text=="下一题" || text=="提交" || text=="继续";
+        var rt=Grid(primary?"Button/Buttons/Primary/Primary Medium Button":"Button/Buttons/Secondary/Secondary Medium Button",content,x,y,w,h);
+        rt.name="Button "+text;
+        foreach(Transform child in rt)child.gameObject.SetActive(false);
+        var image=rt.GetComponent<Image>();image.color=Color.white;image.raycastTarget=true;
+        var b=rt.GetComponent<Button>();b.onClick=new Button.ButtonClickedEvent();b.targetGraphic=image;
+        var colors=b.colors;colors.normalColor=(primary || selected)?new Color(.05f,.57f,.63f,1):new Color(.17f,.22f,.27f,1);
+        colors.highlightedColor=primary?new Color(.12f,.76f,.8f):new Color(.28f,.38f,.43f);
+        colors.pressedColor=new Color(.04f,.4f,.46f);colors.selectedColor=colors.normalColor;
+        colors.disabledColor=new Color(.16f,.19f,.22f,.55f);b.colors=colors;
+        b.navigation=new Navigation{mode=Navigation.Mode.None};
+        var label=Label(text,12,0,w-24,h,26,rt);label.alignment=TextAnchor.MiddleCenter;
         b.onClick.AddListener(()=>action());return b;
+    }
+    void Radio(string text,float x,float y,float w,Action action,bool selected,bool settling)
+    {
+        var rt=Grid("Radio Group/Radio Button",content,x,y,w,112);rt.name="Button "+text;
+        var toggle=rt.GetComponentInChildren<Toggle>();
+        toggle.onValueChanged=new Toggle.ToggleEvent();toggle.group=null;
+        var outline=(Image)toggle.targetGraphic;var dot=(Image)toggle.graphic;
+        // Keep the official Toggle and radio sprite; enlarge its hit area independently.
+        foreach(var graphic in rt.GetComponentsInChildren<Graphic>(true))graphic.gameObject.SetActive(false);
+        toggle.gameObject.SetActive(true);
+        var hit=(RectTransform)toggle.transform;hit.SetParent(rt,false);
+        hit.anchorMin=Vector2.zero;hit.anchorMax=Vector2.one;hit.offsetMin=hit.offsetMax=Vector2.zero;
+        var target=toggle.gameObject.AddComponent<Image>();target.color=Color.clear;target.raycastTarget=true;
+        outline.gameObject.SetActive(false);
+        var ring=Box("Radio ring",hit,0,0,42,42).gameObject.AddComponent<RoundedPanel>();ring.radius=22;ring.borderWidth=3;
+        ring.color=Color.clear;ring.borderColor=selected?Cyan:new Color(.62f,.69f,.74f);ring.raycastTarget=false;
+        var rr=ring.rectTransform;rr.anchorMin=rr.anchorMax=rr.pivot=new Vector2(.5f,.5f);rr.anchoredPosition=new Vector2(0,-18);rr.sizeDelta=new Vector2(42,42);
+        dot.gameObject.SetActive(true);dot.transform.SetParent(rr,false);dot.color=Cyan;dot.raycastTarget=false;
+        dot.rectTransform.anchorMin=dot.rectTransform.anchorMax=dot.rectTransform.pivot=new Vector2(.5f,.5f);
+        dot.rectTransform.anchoredPosition=Vector2.zero;dot.rectTransform.sizeDelta=new Vector2(24,24);
+        toggle.targetGraphic=target;toggle.transition=Selectable.Transition.None;
+        toggle.navigation=new Navigation{mode=Navigation.Mode.None};toggle.SetIsOnWithoutNotify(selected);
+        var number=Label(text,0,0,w,40,30,rt);
+        number.alignment=TextAnchor.MiddleCenter;
+        number.verticalOverflow=VerticalWrapMode.Overflow;
+        if(settling)rt.anchoredPosition3D=new Vector3(x,-y-(selected?6f:0f),selected?0f:-6f);
+        radioStates.Add(on=>{
+            toggle.SetIsOnWithoutNotify(on);
+            ring.borderColor=on?Cyan:new Color(.62f,.69f,.74f);ring.SetVerticesDirty();
+            if(settling)rt.anchoredPosition3D=new Vector3(x,-y-(on?6f:0f),on?0f:-6f);
+        });
+        toggle.onValueChanged.AddListener(value=>{
+            // A selected radio stays selected; changing another option updates the group in place.
+            if(!value) {toggle.SetIsOnWithoutNotify(true);return;}
+            action();
+        });
+    }
+    void Header()
+    {
+        Label("问卷",72,32,250,48,30);
+        var accent=Box("Title accent",content,48,42,8,28).gameObject.AddComponent<RoundedPanel>();
+        accent.color=Cyan;accent.borderWidth=0;accent.raycastTarget=false;
+        var progress=Grid("Progress/Progress Bar",content,760,49,220,12).GetComponent<Slider>();
+        progress.transition=Selectable.Transition.None;progress.interactable=false;
+        progress.minValue=0;progress.maxValue=scores.Length;progress.SetValueWithoutNotify(index+1);
+        foreach(var image in progress.GetComponentsInChildren<Image>())image.color=image.transform==progress.fillRect?Cyan:new Color(.27f,.34f,.4f);
+        Label($"{index+1:00} / {scores.Length:00}",994,32,100,48,20);
     }
     void Draw()
     {
-        foreach(Transform child in content) {child.gameObject.SetActive(false);Destroy(child.gameObject);}
+        if(choiceSettling!=null) {StopCoroutine(choiceSettling);choiceSettling=null;}
+        radioStates.Clear();
+        // Navigation survives page changes so its tint and pointer state do not restart.
+        bool showNavigation=!submitted && !showingEvaluationNotice;
+        if(previousButton)previousButton.gameObject.SetActive(showNavigation);
+        if(nextButton)nextButton.gameObject.SetActive(showNavigation);
+        foreach(Transform child in content) {
+            if((previousButton && child==previousButton.transform) || (nextButton && child==nextButton.transform))continue;
+            child.gameObject.SetActive(false);Destroy(child.gameObject);
+        }
         if(submitted) {Label("已提交，感谢你的回答。",48,200,1004,100,38).alignment=TextAnchor.MiddleCenter;return;}
         if(showingEvaluationNotice) {
             Label("恭喜你完成了问卷，请结合刚刚你对问卷出现以及填写问卷的感受进行问卷评估。",
@@ -195,7 +281,7 @@ public class QuestionnaireView : MonoBehaviour
             Button("继续",822,536,230,54,()=>{showingEvaluationNotice=false;index++;Draw();});
             return;
         }
-        Label($"第 {index+1} / {scores.Length} 题",48,82,1004,36,22);
+        Header();
         var q=Content.questionnaireQuestions[index];
         var question=Label(q.question,48,134,1004,128,34);
         question.alignment=TextAnchor.MiddleCenter;
@@ -207,26 +293,35 @@ public class QuestionnaireView : MonoBehaviour
                 int option=i;bool on=choices[index].Contains(i);
                 bool settling=useSettlingFeedback && seven;
                 float width=seven?(1004-6*14)/7f:1004;
-                Button(seven?q.choiceLabels[i]:(on?"[x] ":"[ ] ")+q.choiceLabels[i],
-                    seven?48+i*(width+14):48,seven?286:260+i*row,width,seven?88:row-6,()=>{
-                        if(settling && on)return;
+                Action choose=()=>{
+                        bool wasSelected=choices[index].Contains(option);
+                        if(settling && wasSelected)return;
                         if(q.choicesType==ChoicesType.Single)choices[index].Clear();
-                        if(on && q.choicesType==ChoicesType.Multiple)choices[index].Remove(option);else choices[index].Add(option);
-                        answered[index]=choices[index].Count>0;skipped[index]=false;Draw();
+                        if(wasSelected && q.choicesType==ChoicesType.Multiple)choices[index].Remove(option);else choices[index].Add(option);
+                        answered[index]=choices[index].Count>0;skipped[index]=false;
+                        if(seven) {
+                            if(choiceSettling!=null) {StopCoroutine(choiceSettling);choiceSettling=null;}
+                            for(int n=0;n<radioStates.Count;n++)radioStates[n](choices[index].Contains(n));
+                            status.text="已选择，可以继续。";
+                        } else Draw();
                         if(settling) {
                             var selected=content.Cast<Transform>().Last(t=>t.gameObject.activeSelf && t.name=="Button "+q.choiceLabels[option]);
-                            StartCoroutine(SettleChoice((RectTransform)selected));
+                            choiceSettling=StartCoroutine(SettleChoice((RectTransform)selected));
                         }
-                    },on,seven,settling);
+                    };
+                if(seven)Radio(q.choiceLabels[i],48+i*(width+14),286,width,choose,on,settling);
+                else Button((on?"[x] ":"[ ] ")+q.choiceLabels[i],48,260+i*row,width,row-6,choose,on);
             }
             if(seven) {
-                Label(q.labelForMinScore,48,391,490,48,22);
-                Label(q.labelForMaxScore,562,391,490,48,22).alignment=TextAnchor.MiddleRight;
+                Label(q.labelForMinScore,78,411,490,48,22);
+                Label(q.labelForMaxScore,532,411,490,48,22).alignment=TextAnchor.MiddleRight;
             }
         } else if(q.choicesType==ChoicesType.Slider) {
             Label(q.labelForMinScore,48,260,490,48,22);
             Label(q.labelForMaxScore,562,260,490,48,22).alignment=TextAnchor.MiddleRight;
-            var rt=Box("Slider",content,68,320,964,64);var slider=rt.gameObject.AddComponent<Slider>();
+            var rt=Box("Slider",content,68,320,964,64);
+            var hit=rt.gameObject.AddComponent<Image>();hit.color=Color.clear;hit.raycastTarget=true;
+            var slider=rt.gameObject.AddComponent<Slider>();
             var bg=Box("Track",rt,0,26,964,12).gameObject.AddComponent<Image>();bg.color=new Color(.49f,.62f,.53f);
             var area=Box("Handle Area",rt,16,0,932,64);var handle=Box("Handle",area,0,0,32,64);
             var image=handle.gameObject.AddComponent<RoundedPanel>();image.color=new Color(.25f,.46f,.36f);
@@ -237,13 +332,23 @@ public class QuestionnaireView : MonoBehaviour
             Button("确认当前数值",760,395,292,50,()=>{answered[index]=true;skipped[index]=false;value.text=scores[index].ToString("0.##");});
         }
         status=Label(answered[index]?"已选择，可以继续。":"请选择后继续。",48,464,1004,36,21);
-        var prev=Button("上一题",48,536,230,54,()=>{index--;Draw();});prev.interactable=index>0;
-        if(q.canSkipQuestion)Button("跳过",435,536,230,54,()=>{skipped[index]=true;Advance();});
-        Button(index==scores.Length-1?"提交":"下一题",822,536,230,54,()=>{
-            if(!answered[index]) {status.text="请先选择一个答案。";return;}
-            skipped[index]=false;Advance();
-        });
+        if(!previousButton) {
+            previousButton=Button("上一题",210,528,300,64,()=>{index--;Draw();});
+            var colors=previousButton.colors;colors.fadeDuration=0;previousButton.colors=colors;
+        }
+        previousButton.interactable=index>0;
+        if(q.canSkipQuestion)Button("跳过",915,536,130,48,()=>{skipped[index]=true;Advance();});
+        if(!nextButton) {
+            nextButton=Button("下一题",590,528,300,64,()=>{
+                if(!answered[index]) {status.text="请先选择一个答案。";return;}
+                skipped[index]=false;Advance();
+            });
+            var colors=nextButton.colors;colors.fadeDuration=0;nextButton.colors=colors;
+            nextButtonLabel=nextButton.GetComponentInChildren<Text>();
+        }
+        nextButtonLabel.text=index==scores.Length-1?"提交":"下一题";
     }
+
     IEnumerator SettleChoice(RectTransform choice)
     {
         Vector3 end=choice.anchoredPosition3D, start=end+new Vector3(0,6f,-6f);

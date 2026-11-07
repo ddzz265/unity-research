@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit.Interactors;
 using UnityEngine.XR.Interaction.Toolkit.Inputs.Readers;
 #if UNITY_VISIONOS
@@ -24,7 +24,7 @@ public class SpatialControllerRays : MonoBehaviour
 #endif
     }
 
-#if UNITY_ANDROID
+#if !UNITY_VISIONOS
     sealed class QuestHand
     {
         readonly UnityEngine.InputSystem.InputAction position, rotation, tracked, trigger;
@@ -50,16 +50,26 @@ public class SpatialControllerRays : MonoBehaviour
         public void Dispose() {position.Dispose();rotation.Dispose();tracked.Dispose();trigger.Dispose();}
     }
     QuestHand questLeft,questRight;
+    UnityEngine.InputSystem.InputAction abortExposure;
+    ExperimentGroupController experiment;
     void OnEnable()
     {
         questLeft=new QuestHand("LeftHand");questRight=new QuestHand("RightHand");
+        experiment=FindAnyObjectByType<ExperimentGroupController>();
+        abortExposure=new UnityEngine.InputSystem.InputAction("Abort Exposure",UnityEngine.InputSystem.InputActionType.Button,binding:"<XRController>{LeftHand}/secondaryButton");
+        abortExposure.Enable();
         // The exposure bridge has task markers up to 50 metres ahead.
         if(leftRay)leftRay.maxRaycastDistance=60;
         if(rightRay)rightRay.maxRaycastDistance=60;
     }
-    void Update() {questLeft?.Apply(leftRay,trackingOrigin);questRight?.Apply(rightRay,trackingOrigin);}
+    void Update() {
+        questLeft?.Apply(leftRay,trackingOrigin);questRight?.Apply(rightRay,trackingOrigin);
+        if(abortExposure!=null && abortExposure.WasPressedThisFrame() && experiment && experiment.Phase==ExperimentPhase.Exposure)
+            experiment.exposureSession.Abort();
+    }
     void OnDisable()
     {
+        abortExposure?.Dispose();abortExposure=null;
         questLeft?.Dispose();questRight?.Dispose();questLeft=questRight=null;
         foreach(var ray in new[]{leftRay,rightRay})if(ray) {ray.uiPressInput.QueueManualState(false,0);ray.gameObject.SetActive(false);}
     }

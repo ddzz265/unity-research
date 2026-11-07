@@ -1,7 +1,8 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.InputSystem;
-using UnityEngine.XR.Interaction.Toolkit.UI;
+using TMPro;
+using System.Collections.Generic;
 
 // A fixed 660-second guided route through the imported tower. Head pose is never overwritten.
 public sealed class ExposureSession : MonoBehaviour
@@ -18,15 +19,15 @@ public sealed class ExposureSession : MonoBehaviour
     public bool Running {get;private set;}
     public int Stage=>Elapsed<60?0:Elapsed<180?1:Elapsed<360?2:Elapsed<540?3:4;
     Canvas guidance, curtain;
-    Text label, pauseLabel;
+    readonly List<AcrophobiaVR.UI.TowerUIPanel> floorPanels = new();
+    TMP_FontAsset floorFont;
     Image black;
     public ExposureTasks Tasks {get;private set;}
     public AcrophobiaVR.Navigation.TierManager Navigation {get;private set;}
     AcrophobiaVR.Navigation.ScreenFader originalFader;
     Vector3 headOffset;
     static readonly float[] Jumps={60,180,270,540};
-    static readonly string[] Titles={"熟悉环境","低层高空适应","逐渐升高","玻璃桥挑战","高空体验"};
-    static readonly string[] Instructions={"观察周围，熟悉塔楼环境。","保持自然呼吸，观察平台及远处。","即将分段升高，请保持舒适姿势。","沿玻璃桥缓慢前行，可自由转头观察。","观察高空环境，体验即将结束。"};
+
 
     public bool Begin()
     {
@@ -34,7 +35,8 @@ public sealed class ExposureSession : MonoBehaviour
         elapsedSeconds=0;Paused=false;Running=true;
         headOffset=head.transform.position-trackingOrigin.position;
         headOffset.y=0;
-        if(!guidance)BuildUI();
+        if(!curtain)BuildUI();
+        foreach(var panel in floorPanels)panel.gameObject.SetActive(false);
         guidance.gameObject.SetActive(true);curtain.gameObject.SetActive(true);
         Apply();
         if(!Tasks)Tasks=gameObject.AddComponent<ExposureTasks>();
@@ -66,9 +68,7 @@ public sealed class ExposureSession : MonoBehaviour
         foreach(float t in Jumps)opacity=Mathf.Max(opacity,Mathf.Clamp01(1-Mathf.Abs(Elapsed-t)/.5f));
         originalFader.ApplyOpacity(opacity);
         if(Tasks)Tasks.SyncStage();
-        label.text=$"{Titles[Stage]}  ·  {Mathf.FloorToInt(Elapsed/60):00}:{Mathf.FloorToInt(Elapsed%60):00} / 11:00\n"+
-            (Elapsed>=640?"体验即将结束，随后进入本组问卷流程。":Tasks?Tasks.Status:Instructions[Stage]);
-        pauseLabel.text=Paused?"继续":"暂停";
+        guidance.gameObject.SetActive(tier<0);
     }
     [ContextMenu("Pause or Resume Exposure")]
     public void TogglePause() {if(!Running)return;Paused=!Paused;Apply();}
@@ -83,16 +83,12 @@ public sealed class ExposureSession : MonoBehaviour
         if(Tasks)Tasks.End(Elapsed>=Duration?"completed":"interrupted");
         Running=false;Paused=false;
         if(guidance)guidance.gameObject.SetActive(false);
+        foreach(var panel in floorPanels)panel.gameObject.SetActive(false);
         if(curtain)curtain.gameObject.SetActive(false);
     }
     void Update()
     {
         if(Running && Keyboard.current!=null && Keyboard.current.escapeKey.wasPressedThisFrame)Abort();
-    }
-    void LateUpdate()
-    {
-        if(!Running || !guidance)return;
-        guidance.transform.SetPositionAndRotation(head.transform.position+head.transform.forward*2-head.transform.up*.48f,head.transform.rotation);
     }
     Canvas MakeCanvas(string name)
     {
@@ -104,12 +100,6 @@ public sealed class ExposureSession : MonoBehaviour
     }
     void BuildUI()
     {
-        guidance=MakeCanvas("Exposure Guidance");guidance.gameObject.AddComponent<TrackedDeviceGraphicRaycaster>();
-        ((RectTransform)guidance.transform).sizeDelta=new Vector2(650,150);
-        var bg=guidance.gameObject.AddComponent<Image>();bg.color=new Color(.025f,.04f,.06f,.88f);
-        label=TextAt(guidance.transform,new Vector2(0,25),new Vector2(630,85),22);
-        pauseLabel=ButtonAt("暂停",-90,TogglePause);
-        var exitButton=ButtonAt("结束体验",90,()=>{}).transform.parent.GetComponent<Button>();
         curtain=MakeCanvas("Exposure Transfer Fade");curtain.sortingOrder=100;
         curtain.transform.SetParent(head.transform,false);curtain.transform.localPosition=new Vector3(0,0,.12f);
         ((RectTransform)curtain.transform).sizeDelta=new Vector2(2000,2000);
@@ -127,28 +117,44 @@ public sealed class ExposureSession : MonoBehaviour
             Navigation.tierAnchors.Add(anchor);
         }
         var safe=new GameObject("Original Safe Anchor").transform;safe.SetParent(transform,false);safe.position=ground;Navigation.safeRoomAnchor=safe;
-        var panel=guidance.gameObject.AddComponent<AcrophobiaVR.UI.TowerUIPanel>();panel.enabled=false;
-        panel.tierManager=Navigation;panel.forfeitButton=exitButton;
-        Navigation.ConfigurePanels(panel);panel.enabled=true;
+        floorFont=TMP_FontAsset.CreateFontAsset(font);
+        floorFont.TryAddCharacters("地面层第共顶（）0123456789 /",out _);
+        // Original TierUIBuilder layout: fixed beside each anchor, 400 x 220 at 0.0015 scale.
+        guidance=BuildFloorPanel(safe,"地面层",false).GetComponent<Canvas>();
+        foreach(var anchor in Navigation.tierAnchors)
+            floorPanels.Add(BuildFloorPanel(anchor,"",true).GetComponent<AcrophobiaVR.UI.TowerUIPanel>());
+        Navigation.ConfigurePanels(floorPanels);
     }
-    Text TextAt(Transform parent,Vector2 position,Vector2 size,int fontSize)
+    GameObject BuildFloorPanel(Transform anchor,string title,bool tier)
     {
-        var go=new GameObject("Label",typeof(RectTransform),typeof(Text));go.layer=5;go.transform.SetParent(parent,false);
-        var rt=(RectTransform)go.transform;rt.sizeDelta=size;rt.anchoredPosition=position;
-        var text=go.GetComponent<Text>();text.font=font;text.fontSize=fontSize;text.alignment=TextAnchor.MiddleCenter;text.color=Color.white;text.raycastTarget=false;
-        return text;
+        var canvas=MakeCanvas(tier?"TierUIPanel_"+floorPanels.Count:"GroundLevelPanel");
+        canvas.transform.SetParent(anchor,false);
+        canvas.transform.localPosition=new Vector3(.9f,1.2f,0);
+        canvas.transform.localRotation=Quaternion.Euler(0,180,0);
+        canvas.transform.localScale=Vector3.one*.0015f;
+        ((RectTransform)canvas.transform).sizeDelta=new Vector2(400,220);
+        canvas.gameObject.AddComponent<CanvasScaler>();
+        var bg=canvas.gameObject.AddComponent<Image>();bg.color=new Color(.05f,.05f,.05f,.85f);bg.raycastTarget=false;
+        var go=new GameObject("TierLabel",typeof(RectTransform));go.layer=5;go.transform.SetParent(canvas.transform,false);
+        var rt=(RectTransform)go.transform;rt.anchoredPosition=new Vector2(0,70);rt.sizeDelta=new Vector2(360,50);
+        var label=go.AddComponent<TextMeshProUGUI>();label.font=floorFont;label.text=title;label.fontSize=28;
+        label.alignment=TextAlignmentOptions.Center;label.color=Color.white;label.raycastTarget=false;
+        if(tier) {
+            canvas.gameObject.SetActive(false);
+            var panel=canvas.gameObject.AddComponent<AcrophobiaVR.UI.TowerUIPanel>();
+            panel.tierManager=Navigation;panel.tierLabel=label;
+        }
+        return canvas.gameObject;
     }
-    Text ButtonAt(string title,float x,UnityEngine.Events.UnityAction action)
-    {
-        var go=new GameObject(title,typeof(RectTransform),typeof(Image),typeof(Button));go.layer=5;go.transform.SetParent(guidance.transform,false);
-        var rt=(RectTransform)go.transform;rt.sizeDelta=new Vector2(150,42);rt.anchoredPosition=new Vector2(x,-48);
-        go.GetComponent<Image>().color=new Color(.14f,.23f,.28f,1);
-        go.GetComponent<Button>().onClick.AddListener(action);
-        var text=TextAt(go.transform,Vector2.zero,new Vector2(150,42),20);text.text=title;return text;
-    }
+
     void OnDestroy()
     {
         if(guidance)Destroy(guidance.gameObject);
+        foreach(var panel in floorPanels)if(panel)Destroy(panel.gameObject);
         if(curtain)Destroy(curtain.gameObject);
+        if(floorFont) {
+            foreach(var texture in floorFont.atlasTextures)if(texture)Destroy(texture);
+            if(floorFont.material)Destroy(floorFont.material);Destroy(floorFont);
+        }
     }
 }

@@ -118027,6 +118027,8 @@ MonoBehaviour:
   startOnPlay: 1
   questionnaire: {fileID: 1838878908}
   mindfulnessAudio: {fileID: 1911760709}
+  exposureSession: {fileID: 0}
+  musicSession: {fileID: 0}
   mindfulnessRoute: {fileID: 1911760710}
   desktopControls:
   - {fileID: 520649524}
