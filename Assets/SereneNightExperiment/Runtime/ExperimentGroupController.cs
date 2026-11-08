@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 using System.Collections;
 
@@ -27,6 +27,12 @@ public sealed class ExperimentGroupController : MonoBehaviour
     public QuestionnaireView questionnaire;
 
     public AudioSource mindfulnessAudio;
+
+    [Range(1,6), InspectorName("第几次正念体验")]
+    public int mindfulnessExperience=1;
+    [InspectorName("正念体验音频（第1至6段）")]
+    public AudioClip[] mindfulnessExperiences=Array.Empty<AudioClip>();
+
 
     public ExposureSession exposureSession;
     public MusicForestSession musicSession;
@@ -79,6 +85,8 @@ public sealed class ExperimentGroupController : MonoBehaviour
 
     {
 
+        if(!GetComponent<QuestEyeRecorder>())gameObject.AddComponent<QuestEyeRecorder>();
+
         DisableOldGuidance();
 
         if(questionnaire) {questionnaire.showOnStart=false;questionnaire.Hide();}
@@ -115,6 +123,17 @@ public sealed class ExperimentGroupController : MonoBehaviour
         Interlocked.Exchange(ref pendingInhalation,0);
 
         TransitionedAt=0;TransitionFrame=-1;
+
+        // Select only for mindfulness; exposure/music and A-F rules stay unchanged.
+        if(!exposureSession && !musicSession && mindfulnessExperiences!=null && mindfulnessExperiences.Length>0) {
+            int index=mindfulnessExperience-1;
+            if(!mindfulnessAudio || index<0 || index>=6 || index>=mindfulnessExperiences.Length || !mindfulnessExperiences[index]) {
+                phase=ExperimentPhase.InvalidSetup;
+                Debug.LogError($"Mindfulness experience {mindfulnessExperience} has no audio. Assign its clip before starting.",this);
+                return;
+            }
+            mindfulnessAudio.clip=mindfulnessExperiences[index];
+        }
 
         if(!questionnaire || !Enum.IsDefined(typeof(ExperimentGroup),group) || (!exposureSession && !musicSession && (!mindfulnessAudio || !mindfulnessAudio.clip))) {
 

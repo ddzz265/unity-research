@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using UnityEditor;
 using UnityEditor.Build;
@@ -48,6 +48,9 @@ public sealed class QuestBuildSettings : IPreprocessBuildWithReport
         var pro=settings.GetFeature<MetaQuestTouchProControllerProfile>();
         if(!quest || !touch || !pro)throw new InvalidOperationException("Required Quest OpenXR features are missing.");
         quest.enabled=touch.enabled=pro.enabled=true;
+        var eye=settings.GetFeature<EyeGazeInteraction>();
+        if(!eye)throw new InvalidOperationException("Eye Gaze Interaction Profile is missing.");
+        eye.enabled=true;EditorUtility.SetDirty(eye);
         // Quest Pro's manifest device identifier is cambria (Unity MetaQuestFeature).
         var serialized=new SerializedObject(quest);
         var devices=serialized.FindProperty("targetDevices");
@@ -98,6 +101,8 @@ public sealed class QuestBuildSettings : IPreprocessBuildWithReport
         if(report.summary.platform!=BuildTarget.Android)return;
         var general=XRGeneralSettingsPerBuildTarget.XRGeneralSettingsForBuildTarget(BuildTargetGroup.Android);
         var settings=OpenXRSettings.GetSettingsForBuildTargetGroup(BuildTargetGroup.Android);
+        if(!settings || !settings.GetFeature<EyeGazeInteraction>() || !settings.GetFeature<EyeGazeInteraction>().enabled)
+            throw new BuildFailedException("Enable Eye Gaze Interaction Profile using Configure Quest Pro before building the eye-recording APK.");
         bool loader=false;
         if(general && general.Manager)foreach(var entry in general.Manager.activeLoaders)loader|=entry is OpenXRLoader;
         if(!loader || !general.InitManagerOnStart || !settings || !settings.GetFeature<MetaQuestFeature>() ||

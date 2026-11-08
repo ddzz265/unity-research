@@ -33,3 +33,16 @@ This repository is an upload snapshot from the original project. Continue develo
 
 Ignore rules are based on https://github.com/github/gitignore/blob/main/Unity.gitignore.
 
+
+## Six mindfulness experiences
+
+Open `Assets/Scenes/Serene_Night_Experiment.unity`, select **Experiment Group Controller**, and set **第几次正念体验** to 1–6 before Play. The default is experience **6**. Select each experience manually; the clips do not play consecutively.
+
+1. Original Mandarin mindfulness audio (preserved).
+2. Breath awareness: source 00:10–09:35; 9 min 25 sec.
+3. Full third audio; approximately 10 min 16.79 sec.
+4. Full fourth audio; approximately 14 min 47.16 sec.
+5. Fifth audio: source 00:09–18:09; 18 min.
+6. Sixth audio: source 00:05–13:17; 13 min 12 sec.
+
+The mindfulness route follows the selected clip's playback duration. A–F experiment groups and questionnaire rules remain unchanged.

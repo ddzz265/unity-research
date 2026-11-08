@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -17,6 +17,25 @@ public class QuestionnaireView : MonoBehaviour
     [NonSerialized] public bool useSettlingFeedback;
     public bool IsPrepared => panel != null;
     public bool IsVisible => panel && panel.gameObject.activeInHierarchy;
+    // Read-only research observation; does not dispatch UI events.
+    public int CurrentQuestionIndex => index;
+    public bool EyeUIInteractable => presentation && presentation.interactable && IsVisible;
+    public bool TryGetEyePanelUV(Ray ray,out Vector2 uv)
+    {
+        uv=new Vector2(float.NaN,float.NaN);
+        if(!IsVisible || PresentationAlpha<=.01f)return false;
+        var plane=new Plane(panel.forward,panel.position);
+        if(!plane.Raycast(ray,out float distance) || distance<0)return false;
+        Vector2 point=panel.InverseTransformPoint(ray.GetPoint(distance));
+        Rect rect=panel.rect;
+        if(!rect.Contains(point))return false;
+        float radius=surface?Mathf.Clamp(surface.radius,0,Mathf.Min(rect.width,rect.height)*.5f):0;
+        Vector2 edge=new Vector2(Mathf.Max(0,Mathf.Abs(point.x-rect.center.x)-(rect.width*.5f-radius)),
+            Mathf.Max(0,Mathf.Abs(point.y-rect.center.y)-(rect.height*.5f-radius)));
+        if(edge.sqrMagnitude>radius*radius)return false;
+        uv=new Vector2((point.x-rect.xMin)/rect.width,(point.y-rect.yMin)/rect.height);
+        return true;
+    }
     public event Action Submitted;
     int index;
     bool submitted, showingEvaluationNotice;

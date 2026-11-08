@@ -118027,6 +118027,14 @@ MonoBehaviour:
   startOnPlay: 1
   questionnaire: {fileID: 1838878908}
   mindfulnessAudio: {fileID: 1911760709}
+  mindfulnessExperience: 6
+  mindfulnessExperiences:
+  - {fileID: 8300000, guid: 1a267de31af84d97aeb26565344cd6ed, type: 3}
+  - {fileID: 8300000, guid: 5c716a2ca6db4377a30fe8268f46f1ce, type: 3}
+  - {fileID: 8300000, guid: 820c83b5b31f4182b76e5b8b332f7cee, type: 3}
+  - {fileID: 8300000, guid: e432d263025a4ea48737db4b6bbb7ae9, type: 3}
+  - {fileID: 8300000, guid: 02d2237b1f7549e789f3b931be09f7f9, type: 3}
+  - {fileID: 8300000, guid: 915b5d318c2b46a69b1f582eebb1cf2b, type: 3}
   exposureSession: {fileID: 0}
   musicSession: {fileID: 0}
   mindfulnessRoute: {fileID: 1911760710}
