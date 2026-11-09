@@ -45,6 +45,6 @@ Open `Assets/Scenes/Serene_Night_Experiment.unity`, select **Experiment Group Co
 5. Updated fifth audio: source **00:10–09:50**, exactly **9 min 40 sec**.
 6. Updated sixth audio, full file: approximately 14 min 47.165 sec.
 
-The mindfulness route follows the selected clip's actual sample duration and DSP playback progress. Selection feedback now uses settling for all A–F groups, without a central selected dot. Other timing triggers and answer logging are preserved.
+The mindfulness route follows the selected clip's actual sample duration and DSP playback progress. Only group E uses settling feedback (9 UI units, 0.45 sec), without a central selected dot; A/B/C/D/F retain ordinary selection marks without sinking. The questionnaire is centred on the current gaze when shown, with head roll removed and a one-time pre-render pose correction. Camera motion blur in the mindfulness forest is disabled to remove its rotation-induced smearing. Other timing triggers and answer logging are preserved.
 
 See [2026-11-09 scene, interaction, performance and audio updates](docs/2026-11-09-update.md) for details and experimental-variable changes. These changes have passed conditional C# compilation and data/audio checks; Android shader compilation, APK building and Quest Pro visual/performance validation remain pending.

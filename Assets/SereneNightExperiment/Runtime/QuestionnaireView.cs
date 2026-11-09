@@ -54,6 +54,7 @@ public class QuestionnaireView : MonoBehaviour
     Text status, nextButtonLabel;
     Button previousButton, nextButton;
     readonly List<Action<bool>> radioStates = new();
+    const float ChoiceSink=9f;
     Coroutine choiceSettling;
     readonly List<RectTransform> optionRects = new();
     QuestionnaireContent Content => questionnaires[selectedQuestionnaire];
@@ -83,7 +84,7 @@ public class QuestionnaireView : MonoBehaviour
         Show();
     }
     public void Prepare() { Begin(); SetExpansion(1f); SetPresentation(1f); Canvas.ForceUpdateCanvases(); Hide(); }
-    public void Hide() { if(panel)panel.gameObject.SetActive(false); }
+    public void Hide() { Application.onBeforeRender-=CenterBeforeFirstRender;if(panel)panel.gameObject.SetActive(false); }
     public void SetRenderCamera(Camera camera) {if(panel)panel.GetComponent<Canvas>().worldCamera=camera;}
     // Synchronous display for experimental T0: no extra frame, fade or recenter loop.
     public bool Show(float alpha = 1f, bool unfold = false)
@@ -92,12 +93,30 @@ public class QuestionnaireView : MonoBehaviour
         var camera=Camera.main;
         if(!panel || !camera) {Debug.LogError("A main camera and valid questionnaire are required.");return false;}
         panel.SetParent(null,true);
-        panel.SetPositionAndRotation(camera.transform.position+camera.transform.forward*2,
-            Quaternion.LookRotation(camera.transform.forward,camera.transform.up));
+        PlaceAtViewCenter(camera);
         SetPresentation(alpha);
         SetExpansion(unfold?0f:1f);
         panel.gameObject.SetActive(true);
+        // Sample the latest tracked pose once before this first visible frame, then remain world-locked.
+        Application.onBeforeRender-=CenterBeforeFirstRender;
+        Application.onBeforeRender+=CenterBeforeFirstRender;
         return true;
+    }
+    void PlaceAtViewCenter(Camera camera)
+    {
+        var head=camera.transform;
+        Vector3 forward=head.forward;
+        Vector3 up=Vector3.ProjectOnPlane(Vector3.up,forward);
+        if(up.sqrMagnitude<.000001f)up=head.up; // The horizon is undefined when looking exactly vertically.
+        panel.pivot=new Vector2(.5f,.5f);
+        panel.SetPositionAndRotation(head.position+forward*2f,Quaternion.LookRotation(forward,up));
+    }
+    [BeforeRenderOrder(100)]
+    void CenterBeforeFirstRender()
+    {
+        Application.onBeforeRender-=CenterBeforeFirstRender;
+        var camera=Camera.main;
+        if(IsVisible && camera)PlaceAtViewCenter(camera);
     }
     public void SetPresentation(float alpha)
     {
@@ -152,7 +171,7 @@ public class QuestionnaireView : MonoBehaviour
         float tangent=growing?-4f*t3+7f*t4-3f*t5:t-6f*t3+8f*t4-3f*t5;
         return Mathf.Lerp(growing?first:middle,growing?middle:last,SmootherStep(t))+velocity*duration*tangent;
     }
-    void OnDestroy() { if(panel)Destroy(panel.gameObject); }
+    void OnDestroy() { Application.onBeforeRender-=CenterBeforeFirstRender;if(panel)Destroy(panel.gameObject); }
     public void Begin()
     {
         if (questionnaires == null || questionnaires.Length == 0 || Content == null || Content.questionnaireQuestions.Count == 0) {
@@ -242,7 +261,7 @@ public class QuestionnaireView : MonoBehaviour
         var rt=Grid("Radio Group/Radio Button",content,x,y,w,112);rt.name="Button "+text;
         var toggle=rt.GetComponentInChildren<Toggle>();
         toggle.onValueChanged=new Toggle.ToggleEvent();toggle.group=null;
-        var outline=(Image)toggle.targetGraphic;
+        var outline=(Image)toggle.targetGraphic;var dot=(Image)toggle.graphic;
         // Keep the official Toggle and radio sprite; enlarge its hit area independently.
         foreach(var graphic in rt.GetComponentsInChildren<Graphic>(true))graphic.gameObject.SetActive(false);
         toggle.gameObject.SetActive(true);
@@ -251,20 +270,25 @@ public class QuestionnaireView : MonoBehaviour
         var target=toggle.gameObject.AddComponent<Image>();target.color=Color.clear;target.raycastTarget=true;
         outline.gameObject.SetActive(false);
         var ring=Box("Radio ring",hit,0,0,42,42).gameObject.AddComponent<RoundedPanel>();ring.radius=22;ring.borderWidth=3;
-        ring.color=Color.clear;ring.borderColor=new Color(.62f,.69f,.74f);ring.raycastTarget=false;
+        ring.color=Color.clear;ring.borderColor=selected && !settling?Cyan:new Color(.62f,.69f,.74f);ring.raycastTarget=false;
         var rr=ring.rectTransform;rr.anchorMin=rr.anchorMax=rr.pivot=new Vector2(.5f,.5f);rr.anchoredPosition=new Vector2(0,-18);rr.sizeDelta=new Vector2(42,42);
-        // No selected centre dot or colour flash: displacement is the selection feedback.
-        toggle.graphic=null;
+        dot.transform.SetParent(rr,false);dot.color=Cyan;dot.raycastTarget=false;
+        dot.rectTransform.anchorMin=dot.rectTransform.anchorMax=dot.rectTransform.pivot=new Vector2(.5f,.5f);
+        dot.rectTransform.anchoredPosition=Vector2.zero;dot.rectTransform.sizeDelta=new Vector2(24,24);
+        dot.gameObject.SetActive(!settling);
+        // E uses displacement alone; other groups retain the ordinary selected dot.
+        toggle.graphic=settling?null:dot;
         toggle.targetGraphic=target;toggle.transition=Selectable.Transition.None;
         toggle.navigation=new Navigation{mode=Navigation.Mode.None};toggle.SetIsOnWithoutNotify(selected);
         var number=Label(text,0,0,w,40,30,rt);
         number.alignment=TextAnchor.MiddleCenter;
         number.verticalOverflow=VerticalWrapMode.Overflow;
         optionRects.Add(rt);
-        rt.anchoredPosition3D=new Vector3(x,-y-(selected?6f:0f),selected?0f:-6f);
+        if(settling)rt.anchoredPosition3D=new Vector3(x,-y-(selected?ChoiceSink:0f),selected?0f:-ChoiceSink);
         radioStates.Add(on=>{
             toggle.SetIsOnWithoutNotify(on);
-            rt.anchoredPosition3D=new Vector3(x,-y-(on?6f:0f),on?0f:-6f);
+            if(settling)rt.anchoredPosition3D=new Vector3(x,-y-(on?ChoiceSink:0f),on?0f:-ChoiceSink);
+            else {ring.borderColor=on?Cyan:new Color(.62f,.69f,.74f);ring.SetVerticesDirty();}
         });
         toggle.onValueChanged.AddListener(value=>{
             // A selected radio stays selected; changing another option updates the group in place.
@@ -312,7 +336,7 @@ public class QuestionnaireView : MonoBehaviour
             float row=Mathf.Min(62,240f/Mathf.Max(1,q.choiceLabels.Count));
             for(int i=0;i<q.choiceLabels.Count;i++) {
                 int option=i;bool on=choices[index].Contains(i);
-                bool settling=true;
+                bool settling=useSettlingFeedback;
                 float width=seven?(1004-6*14)/7f:1004;
                 Action choose=()=>{
                         bool wasSelected=choices[index].Contains(option);
@@ -325,17 +349,27 @@ public class QuestionnaireView : MonoBehaviour
                             for(int n=0;n<radioStates.Count;n++)radioStates[n](choices[index].Contains(n));
                             status.text=answered[index]?"已选择，可以继续。":"请选择后继续。";
                         }
-                        if(choices[index].Contains(option)) {
+                        if(settling && choices[index].Contains(option)) {
                             choiceSettling=StartCoroutine(SettleChoice(optionRects[option]));
                         }
                     };
                 if(seven)Radio(q.choiceLabels[i],48+i*(width+14),286,width,choose,on,settling);
                 else {
                     float y=260+i*row;
-                    var button=Button(q.choiceLabels[i],48,y,width,row-6,choose);
-                    button.transition=Selectable.Transition.None;
+                    string label=q.choiceLabels[i];
+                    var button=Button(settling?label:(on?"[x] ":"[ ] ")+label,48,y,width,row-6,choose,on && !settling);
+                    if(settling)button.transition=Selectable.Transition.None;
                     var rect=(RectTransform)button.transform;optionRects.Add(rect);
-                    Action<bool> state=value=>rect.anchoredPosition3D=new Vector3(48,-y-(value?6f:0f),value?0f:-6f);
+                    var text=button.GetComponentInChildren<Text>();
+                    Action<bool> state=value=>{
+                        if(settling)rect.anchoredPosition3D=new Vector3(48,-y-(value?ChoiceSink:0f),value?0f:-ChoiceSink);
+                        else {
+                            text.text=(value?"[x] ":"[ ] ")+label;
+                            var colors=button.colors;
+                            colors.normalColor=value?new Color(.05f,.57f,.63f,1):new Color(.17f,.22f,.27f,1);
+                            colors.selectedColor=colors.normalColor;button.colors=colors;
+                        }
+                    };
                     radioStates.Add(state);state(on);
                 }
             }
@@ -378,7 +412,7 @@ public class QuestionnaireView : MonoBehaviour
 
     IEnumerator SettleChoice(RectTransform choice)
     {
-        Vector3 end=choice.anchoredPosition3D, start=end+new Vector3(0,6f,-6f);
+        Vector3 end=choice.anchoredPosition3D, start=end+new Vector3(0,ChoiceSink,-ChoiceSink);
         double began=Time.realtimeSinceStartupAsDouble;
         while(choice && choice.gameObject.activeSelf) {
             float time=Mathf.Clamp01((float)((Time.realtimeSinceStartupAsDouble-began)/.45));
