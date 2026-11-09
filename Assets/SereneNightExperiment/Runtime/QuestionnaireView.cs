@@ -55,6 +55,7 @@ public class QuestionnaireView : MonoBehaviour
     Button previousButton, nextButton;
     readonly List<Action<bool>> radioStates = new();
     Coroutine choiceSettling;
+    readonly List<RectTransform> optionRects = new();
     QuestionnaireContent Content => questionnaires[selectedQuestionnaire];
     public static string ResponseDirectory {
         get {
@@ -169,6 +170,8 @@ public class QuestionnaireView : MonoBehaviour
             presentation=go.AddComponent<CanvasGroup>();
             go.transform.SetParent(transform, false);
             var canvas = go.GetComponent<Canvas>(); canvas.renderMode = RenderMode.WorldSpace; canvas.worldCamera = Camera.main;
+            // Rasterise the legacy Chinese font at twice the canvas density, retaining layout and hit boxes.
+            go.AddComponent<CanvasScaler>().dynamicPixelsPerUnit=2f;
             panel = go.GetComponent<RectTransform>(); panel.sizeDelta = new Vector2(1100, 620);
             panel.localScale = Vector3.one * .0016f;
             surface=go.AddComponent<RoundedPanel>();surface.radius=28;
@@ -239,7 +242,7 @@ public class QuestionnaireView : MonoBehaviour
         var rt=Grid("Radio Group/Radio Button",content,x,y,w,112);rt.name="Button "+text;
         var toggle=rt.GetComponentInChildren<Toggle>();
         toggle.onValueChanged=new Toggle.ToggleEvent();toggle.group=null;
-        var outline=(Image)toggle.targetGraphic;var dot=(Image)toggle.graphic;
+        var outline=(Image)toggle.targetGraphic;
         // Keep the official Toggle and radio sprite; enlarge its hit area independently.
         foreach(var graphic in rt.GetComponentsInChildren<Graphic>(true))graphic.gameObject.SetActive(false);
         toggle.gameObject.SetActive(true);
@@ -248,21 +251,20 @@ public class QuestionnaireView : MonoBehaviour
         var target=toggle.gameObject.AddComponent<Image>();target.color=Color.clear;target.raycastTarget=true;
         outline.gameObject.SetActive(false);
         var ring=Box("Radio ring",hit,0,0,42,42).gameObject.AddComponent<RoundedPanel>();ring.radius=22;ring.borderWidth=3;
-        ring.color=Color.clear;ring.borderColor=selected?Cyan:new Color(.62f,.69f,.74f);ring.raycastTarget=false;
+        ring.color=Color.clear;ring.borderColor=new Color(.62f,.69f,.74f);ring.raycastTarget=false;
         var rr=ring.rectTransform;rr.anchorMin=rr.anchorMax=rr.pivot=new Vector2(.5f,.5f);rr.anchoredPosition=new Vector2(0,-18);rr.sizeDelta=new Vector2(42,42);
-        dot.gameObject.SetActive(true);dot.transform.SetParent(rr,false);dot.color=Cyan;dot.raycastTarget=false;
-        dot.rectTransform.anchorMin=dot.rectTransform.anchorMax=dot.rectTransform.pivot=new Vector2(.5f,.5f);
-        dot.rectTransform.anchoredPosition=Vector2.zero;dot.rectTransform.sizeDelta=new Vector2(24,24);
+        // No selected centre dot or colour flash: displacement is the selection feedback.
+        toggle.graphic=null;
         toggle.targetGraphic=target;toggle.transition=Selectable.Transition.None;
         toggle.navigation=new Navigation{mode=Navigation.Mode.None};toggle.SetIsOnWithoutNotify(selected);
         var number=Label(text,0,0,w,40,30,rt);
         number.alignment=TextAnchor.MiddleCenter;
         number.verticalOverflow=VerticalWrapMode.Overflow;
-        if(settling)rt.anchoredPosition3D=new Vector3(x,-y-(selected?6f:0f),selected?0f:-6f);
+        optionRects.Add(rt);
+        rt.anchoredPosition3D=new Vector3(x,-y-(selected?6f:0f),selected?0f:-6f);
         radioStates.Add(on=>{
             toggle.SetIsOnWithoutNotify(on);
-            ring.borderColor=on?Cyan:new Color(.62f,.69f,.74f);ring.SetVerticesDirty();
-            if(settling)rt.anchoredPosition3D=new Vector3(x,-y-(on?6f:0f),on?0f:-6f);
+            rt.anchoredPosition3D=new Vector3(x,-y-(on?6f:0f),on?0f:-6f);
         });
         toggle.onValueChanged.AddListener(value=>{
             // A selected radio stays selected; changing another option updates the group in place.
@@ -284,7 +286,7 @@ public class QuestionnaireView : MonoBehaviour
     void Draw()
     {
         if(choiceSettling!=null) {StopCoroutine(choiceSettling);choiceSettling=null;}
-        radioStates.Clear();
+        radioStates.Clear();optionRects.Clear();
         // Navigation survives page changes so its tint and pointer state do not restart.
         bool showNavigation=!submitted && !showingEvaluationNotice;
         if(previousButton)previousButton.gameObject.SetActive(showNavigation);
@@ -310,26 +312,32 @@ public class QuestionnaireView : MonoBehaviour
             float row=Mathf.Min(62,240f/Mathf.Max(1,q.choiceLabels.Count));
             for(int i=0;i<q.choiceLabels.Count;i++) {
                 int option=i;bool on=choices[index].Contains(i);
-                bool settling=useSettlingFeedback && seven;
+                bool settling=true;
                 float width=seven?(1004-6*14)/7f:1004;
                 Action choose=()=>{
                         bool wasSelected=choices[index].Contains(option);
-                        if(settling && wasSelected)return;
+                        if(wasSelected && q.choicesType==ChoicesType.Single)return;
                         if(q.choicesType==ChoicesType.Single)choices[index].Clear();
                         if(wasSelected && q.choicesType==ChoicesType.Multiple)choices[index].Remove(option);else choices[index].Add(option);
                         answered[index]=choices[index].Count>0;skipped[index]=false;
-                        if(seven) {
+                        {
                             if(choiceSettling!=null) {StopCoroutine(choiceSettling);choiceSettling=null;}
                             for(int n=0;n<radioStates.Count;n++)radioStates[n](choices[index].Contains(n));
-                            status.text="已选择，可以继续。";
-                        } else Draw();
-                        if(settling) {
-                            var selected=content.Cast<Transform>().Last(t=>t.gameObject.activeSelf && t.name=="Button "+q.choiceLabels[option]);
-                            choiceSettling=StartCoroutine(SettleChoice((RectTransform)selected));
+                            status.text=answered[index]?"已选择，可以继续。":"请选择后继续。";
+                        }
+                        if(choices[index].Contains(option)) {
+                            choiceSettling=StartCoroutine(SettleChoice(optionRects[option]));
                         }
                     };
                 if(seven)Radio(q.choiceLabels[i],48+i*(width+14),286,width,choose,on,settling);
-                else Button((on?"[x] ":"[ ] ")+q.choiceLabels[i],48,260+i*row,width,row-6,choose,on);
+                else {
+                    float y=260+i*row;
+                    var button=Button(q.choiceLabels[i],48,y,width,row-6,choose);
+                    button.transition=Selectable.Transition.None;
+                    var rect=(RectTransform)button.transform;optionRects.Add(rect);
+                    Action<bool> state=value=>rect.anchoredPosition3D=new Vector3(48,-y-(value?6f:0f),value?0f:-6f);
+                    radioStates.Add(state);state(on);
+                }
             }
             if(seven) {
                 Label(q.labelForMinScore,78,411,490,48,22);

@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit.Interactors;
 using UnityEngine.XR.Interaction.Toolkit.Inputs.Readers;
 #if UNITY_VISIONOS
@@ -15,6 +15,9 @@ public class SpatialControllerRays : MonoBehaviour
     {
         foreach(var ray in new[]{leftRay,rightRay}) {
             if(!ray)continue;
+            // Only the visual objects move to UI; tracking and XRI interaction masks stay intact.
+            foreach(var visual in ray.GetComponentsInChildren<Renderer>(true))
+                visual.gameObject.layer=LayerMask.NameToLayer("UI");
             ray.enableUIInteraction=true;
             ray.uiPressInput.inputSourceMode=XRInputButtonReader.InputSourceMode.ManualValue;
             ray.gameObject.SetActive(false);

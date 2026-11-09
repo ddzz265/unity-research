@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.InputSystem;
 using TMPro;
@@ -21,6 +21,7 @@ public sealed class ExposureSession : MonoBehaviour
     Canvas guidance, curtain;
     readonly List<AcrophobiaVR.UI.TowerUIPanel> floorPanels = new();
     TMP_FontAsset floorFont;
+    public TMP_FontAsset LabelFont=>floorFont;
     Image black;
     public ExposureTasks Tasks {get;private set;}
     public AcrophobiaVR.Navigation.TierManager Navigation {get;private set;}
@@ -103,7 +104,7 @@ public sealed class ExposureSession : MonoBehaviour
         curtain=MakeCanvas("Exposure Transfer Fade");curtain.sortingOrder=100;
         curtain.transform.SetParent(head.transform,false);curtain.transform.localPosition=new Vector3(0,0,.12f);
         ((RectTransform)curtain.transform).sizeDelta=new Vector2(2000,2000);
-        black=curtain.gameObject.AddComponent<Image>();black.raycastTarget=false;
+        black=curtain.gameObject.AddComponent<Image>();black.color=Color.clear;black.raycastTarget=false;
         originalFader=curtain.gameObject.AddComponent<AcrophobiaVR.Navigation.ScreenFader>();originalFader.fadeImage=black;
         Navigation=gameObject.AddComponent<AcrophobiaVR.Navigation.TierManager>();
         Navigation.xrOrigin=trackingOrigin;Navigation.xrCamera=head.transform;
@@ -118,7 +119,7 @@ public sealed class ExposureSession : MonoBehaviour
         }
         var safe=new GameObject("Original Safe Anchor").transform;safe.SetParent(transform,false);safe.position=ground;Navigation.safeRoomAnchor=safe;
         floorFont=TMP_FontAsset.CreateFontAsset(font);
-        floorFont.TryAddCharacters("地面层第共顶（）0123456789 /",out _);
+        floorFont.TryAddCharacters("地面层第共顶（）0123456789 /"+ExposureTasks.LabelCharacters,out _);
         // Original TierUIBuilder layout: fixed beside each anchor, 400 x 220 at 0.0015 scale.
         guidance=BuildFloorPanel(safe,"地面层",false).GetComponent<Canvas>();
         foreach(var anchor in Navigation.tierAnchors)

@@ -22,6 +22,7 @@ Shader "AcrophobiaVR/MirrorBridge"
             HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
+            #pragma multi_compile_instancing
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
@@ -30,6 +31,7 @@ Shader "AcrophobiaVR/MirrorBridge"
             {
                 float4 positionOS : POSITION;
                 float3 normalOS   : NORMAL;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct Varyings
@@ -38,6 +40,7 @@ Shader "AcrophobiaVR/MirrorBridge"
                 float4 screenPos    : TEXCOORD0;
                 float3 positionWS   : TEXCOORD1;
                 float3 normalWS     : TEXCOORD2;
+                UNITY_VERTEX_OUTPUT_STEREO
             };
 
             TEXTURE2D(_ReflectionTex);
@@ -52,6 +55,8 @@ Shader "AcrophobiaVR/MirrorBridge"
             Varyings vert(Attributes IN)
             {
                 Varyings OUT;
+                UNITY_SETUP_INSTANCE_ID(IN);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
                 VertexPositionInputs positions = GetVertexPositionInputs(IN.positionOS.xyz);
                 OUT.positionHCS = positions.positionCS;
                 OUT.positionWS = positions.positionWS;
@@ -62,6 +67,7 @@ Shader "AcrophobiaVR/MirrorBridge"
 
             half4 frag(Varyings IN) : SV_Target
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
                 float2 screenUV = IN.screenPos.xy / IN.screenPos.w;
 
                 // Subtle normal-based distortion so the reflection isn't a

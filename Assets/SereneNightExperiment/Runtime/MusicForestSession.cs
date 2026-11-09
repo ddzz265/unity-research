@@ -14,6 +14,7 @@ public sealed class MusicForestSession : MonoBehaviour
     public double Elapsed {get;private set;}
     public bool Failed {get;private set;}
     bool paused;
+    float[] routeLengths;
     GameObject notice;
     public bool Begin()
     {
@@ -23,6 +24,8 @@ public sealed class MusicForestSession : MonoBehaviour
         }
         if(notice)notice.SetActive(false);
         music.enabled=true;music.loop=false;music.playOnAwake=false;music.pitch=1;music.spatialBlend=0;music.ignoreListenerPause=false;music.volume=1;
+        routeLengths=new float[route.Length];
+        for(int i=1;i<route.Length;i++)routeLengths[i]=routeLengths[i-1]+Vector3.Distance(route[i-1],route[i]);
         music.Play();Running=true;paused=false;Apply();return true;
     }
     public bool Advance(double seconds)
@@ -43,8 +46,10 @@ public sealed class MusicForestSession : MonoBehaviour
     {
         // Slow out-and-back route: no forced head rotation and no jump at the turnaround.
         float u=(float)(Elapsed/Duration);float distance=(1-Mathf.Cos(u*2*Mathf.PI))*.5f;
-        float f=distance*(route.Length-1);int i=Mathf.Min((int)f,route.Length-2);
-        trackingOrigin.position=Vector3.Lerp(route[i],route[i+1],f-i);
+        float travelled=distance*routeLengths[routeLengths.Length-1];
+        int next=Array.BinarySearch(routeLengths,travelled);if(next<0)next=~next;
+        next=Mathf.Clamp(next,1,route.Length-1);
+        trackingOrigin.position=Vector3.Lerp(route[next-1],route[next],Mathf.InverseLerp(routeLengths[next-1],routeLengths[next],travelled));
     }
     public void SetPaused(bool value)
     {

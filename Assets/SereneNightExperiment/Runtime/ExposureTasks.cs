@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 using UnityEngine.InputSystem;
 using UnityEngine.XR.Interaction.Toolkit.UI;
 
@@ -17,7 +18,7 @@ public sealed class ExposureTasks : MonoBehaviour
     public bool Active {get;private set;}
     ExposureSession session;
     Canvas canvas;
-    Text[] labels;
+    TextMeshProUGUI[] labels;
     Image[] fills;
     readonly bool[,] completed=new bool[5,3];
     readonly float[,] times=new float[5,3];
@@ -28,6 +29,7 @@ public sealed class ExposureTasks : MonoBehaviour
         new[]{"观察升高后的左侧","观察远处建筑","观察升高后的下方"},
         new[]{"找到桥前段标记","找到桥中段标记","找到桥终点标记"},
         new[]{"观察高层左侧","观察远处天际线","完成最后一次下望"}};
+    public static string LabelCharacters=>string.Concat(Array.ConvertAll(Names,n=>string.Concat(n)))+"✓ 已完成";
     float dwell;
     int focused=-1,level=-1;
     bool applicationPaused,hasFocus=true;
@@ -45,16 +47,16 @@ public sealed class ExposureTasks : MonoBehaviour
         var go=new GameObject("Exposure Task Targets",typeof(RectTransform),typeof(Canvas),typeof(TrackedDeviceGraphicRaycaster));go.layer=5;
         canvas=go.GetComponent<Canvas>();canvas.renderMode=RenderMode.WorldSpace;
         canvas.worldCamera=session.controller.GetComponent<QuestionnaireBackgroundBlur>().UICamera;
-        Targets=new RectTransform[3];labels=new Text[3];fills=new Image[3];
+        Targets=new RectTransform[3];labels=new TextMeshProUGUI[3];fills=new Image[3];
         for(int i=0;i<3;i++) {
             int index=i;
             var target=new GameObject("Task "+(i+1),typeof(RectTransform),typeof(Image),typeof(Button));target.layer=5;target.transform.SetParent(go.transform,false);
             Targets[i]=(RectTransform)target.transform;Targets[i].sizeDelta=new Vector2(340,115);Targets[i].localScale=Vector3.one*.004f;
             target.GetComponent<Image>().color=new Color(.03f,.19f,.23f,.95f);
             target.GetComponent<Button>().onClick.AddListener(()=>Select(index,"click"));
-            var label=new GameObject("Task Label",typeof(RectTransform),typeof(Text));label.layer=5;label.transform.SetParent(target.transform,false);
+            var label=new GameObject("Task Label",typeof(RectTransform),typeof(TextMeshProUGUI));label.layer=5;label.transform.SetParent(target.transform,false);
             var rect=(RectTransform)label.transform;rect.sizeDelta=new Vector2(330,95);
-            labels[i]=label.GetComponent<Text>();labels[i].font=session.font;labels[i].fontSize=27;labels[i].alignment=TextAnchor.MiddleCenter;labels[i].color=Color.white;labels[i].raycastTarget=false;
+            labels[i]=label.GetComponent<TextMeshProUGUI>();labels[i].font=session.LabelFont;labels[i].fontSize=30;labels[i].alignment=TextAlignmentOptions.Center;labels[i].color=Color.white;labels[i].raycastTarget=false;
             var bar=new GameObject("Dwell Progress",typeof(RectTransform),typeof(Image));bar.layer=5;bar.transform.SetParent(target.transform,false);
             var br=(RectTransform)bar.transform;br.anchorMin=new Vector2(0,0);br.anchorMax=new Vector2(0,0);br.pivot=new Vector2(0,0);br.anchoredPosition=Vector2.zero;br.sizeDelta=new Vector2(0,8);
             fills[i]=bar.GetComponent<Image>();fills[i].color=new Color(.2f,.9f,.65f);fills[i].raycastTarget=false;
@@ -72,11 +74,26 @@ public sealed class ExposureTasks : MonoBehaviour
             for(int i=0;i<3;i++) {
                 Vector3 p=anchor+new Vector3((i-1)*3,1.6f,8);
                 if(i==2)p.y=anchor.y+.1f;
-                if(next==3)p=new Vector3(session.high.x,session.high.y+1.2f,Mathf.Lerp(session.high.z,session.bridgeEnd.z,(i+1)/3f));
+                if(next==3) {
+                    float z=Mathf.Lerp(session.high.z,session.bridgeEnd.z,(i+1)/3f);
+                    p=new Vector3(session.high.x+(i-1)*Mathf.Max(3f,(z-session.high.z)*.2f),session.high.y+1.2f,z);
+                }
                 Targets[i].SetPositionAndRotation(p,Quaternion.identity);
                 Targets[i].gameObject.SetActive(!completed[next,i]);
                 labels[i].text=completed[next,i]?"✓ 已完成":$"{i+1}  {Names[next][i]}";
             }
+        }
+    }
+    void LateUpdate()
+    {
+        if(!Active || !session || !session.head)return;
+        // Preserve the task anchors; keep the text readable at a constant angular size.
+        Vector3 eye=session.head.transform.position;
+        foreach(var target in Targets) {
+            if(!target.gameObject.activeSelf)continue;
+            Vector3 direction=target.position-eye;
+            target.localScale=Vector3.one*(.004f*Mathf.Clamp(direction.magnitude/8f,1f,8f));
+            if(direction.sqrMagnitude>.001f)target.rotation=Quaternion.LookRotation(direction);
         }
     }
     bool CanInteract=>Active && session.Running && !session.Paused && session.controller.Phase==ExperimentPhase.Exposure &&

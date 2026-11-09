@@ -26,6 +26,7 @@ Shader "AcrophobiaVR/GlassBridge"
             HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
+            #pragma multi_compile_instancing
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
@@ -34,6 +35,7 @@ Shader "AcrophobiaVR/GlassBridge"
             {
                 float4 positionOS : POSITION;
                 float3 normalOS   : NORMAL;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct Varyings
@@ -41,6 +43,7 @@ Shader "AcrophobiaVR/GlassBridge"
                 float4 positionHCS : SV_POSITION;
                 float3 positionWS  : TEXCOORD0;
                 float3 normalWS    : TEXCOORD1;
+                UNITY_VERTEX_OUTPUT_STEREO
             };
 
             CBUFFER_START(UnityPerMaterial)
@@ -54,6 +57,8 @@ Shader "AcrophobiaVR/GlassBridge"
             Varyings vert(Attributes IN)
             {
                 Varyings OUT;
+                UNITY_SETUP_INSTANCE_ID(IN);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
                 VertexPositionInputs positions = GetVertexPositionInputs(IN.positionOS.xyz);
                 OUT.positionHCS = positions.positionCS;
                 OUT.positionWS = positions.positionWS;
@@ -63,6 +68,7 @@ Shader "AcrophobiaVR/GlassBridge"
 
             half4 frag(Varyings IN) : SV_Target
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
                 float3 viewDir = normalize(GetCameraPositionWS() - IN.positionWS);
                 float3 normal = normalize(IN.normalWS);
 

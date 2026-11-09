@@ -40,9 +40,11 @@ Open `Assets/Scenes/Serene_Night_Experiment.unity`, select **Experiment Group Co
 
 1. Original Mandarin mindfulness audio (preserved).
 2. Breath awareness: source 00:10–09:35; 9 min 25 sec.
-3. Full third audio; approximately 10 min 16.79 sec.
-4. Full fourth audio; approximately 14 min 47.16 sec.
-5. Fifth audio: source 00:09–18:09; 18 min.
-6. Sixth audio: source 00:05–13:17; 13 min 12 sec.
+3. Updated third audio, full file: approximately 10 min (600.004 sec).
+4. Updated fourth audio, full file: approximately 15 min 5.253 sec.
+5. Updated fifth audio: source **00:10–09:50**, exactly **9 min 40 sec**.
+6. Updated sixth audio, full file: approximately 14 min 47.165 sec.
 
-The mindfulness route follows the selected clip's playback duration. A–F experiment groups and questionnaire rules remain unchanged.
+The mindfulness route follows the selected clip's actual sample duration and DSP playback progress. Selection feedback now uses settling for all A–F groups, without a central selected dot. Other timing triggers and answer logging are preserved.
+
+See [2026-11-09 scene, interaction, performance and audio updates](docs/2026-11-09-update.md) for details and experimental-variable changes. These changes have passed conditional C# compilation and data/audio checks; Android shader compilation, APK building and Quest Pro visual/performance validation remain pending.

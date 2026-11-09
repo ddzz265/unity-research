@@ -1,6 +1,6 @@
 # SereneNight_Test：Quest Pro 修改记录
 
-修改日期：2026-11-06。原项目：`D:\unityprogramme\SereneNight_Test`。
+更新日期：2026-11-09。原项目：`D:\unityprogramme\SereneNight_Test`。
 
 ## 已完成
 
@@ -8,10 +8,12 @@
 - Quest 控制器使用 Input System 的瞄准位置/旋转、追踪状态和扳机输入，接入现有 XR Interaction Toolkit 的 UI 点击和滑条拖动。失去追踪时释放输入并隐藏射线。
 - 保留每个场景现有 XRUIInputModule 和世界空间问卷。正念、暴露、音乐三个构建场景均检查到 headPose、leftRay、rightRay 和 trackingOrigin 引用。没有 XR 配置的模板 SampleScene 已从构建列表禁用。
 - Android 射线距离从原来的 8 米扩展到 60 米，覆盖暴露场景 50 米长桥上的任务目标。
-- Android 播放阶段不再由问卷组件强制维持后处理/深度纹理。C/F 组显示问卷时才启用原 Gaussian 景深；其他组不添加模糊。UI 相机关闭独立深度/颜色复制及后处理抗锯齿。
-- Mobile URP：HDR 关闭，MSAA 改为 2x，阴影距离 50 米改为 25 米。原本 0.8 的渲染比例保持原值。这会减少远处阴影和 HDR 后处理表现，需要在真机确认画质可接受，尤其是用于实验条件比较时。
-- 添加 OpenXR 1.16.1、XR Management 4.4.0 包依赖，以及 `Serene Night > Configure Quest Pro (Android)` 配置菜单。
+- Android 色彩处理保持启用状态，避免切换虚化时调色跳变；景深与所需深度纹理仅在 C/F 虚化时启用（保留原相机已有的深度需求）。C/F 组背景以 3 秒渐变进入 Gaussian 景深。问卷与手柄射线由清晰 UI 相机绘制；没有问卷和追踪手柄时移除该叠加相机。
+- Mobile URP：HDR 关闭，MSAA 改为 2x，阴影距离 50 米改为 25 米。渲染比例由 0.8 改为 1，以改善文字和边缘采样；同时调整植被预算。这会减少远处阴影和 HDR 后处理表现，需要在真机确认画质可接受，尤其是用于实验条件比较时。
+- 添加 OpenXR 1.16.1、XR Management 4.6.1 包依赖，以及 `Serene Night > Configure Quest Pro (Android)` 配置菜单。
 - 保留 D/E/F 的真实吸气触发，没有添加手柄模拟吸气。当前仍需提供传感器型号、连接方式和数据协议，再接入现有 `NotifyInhalation()`；在此之前这些组会停留在等待吸气阶段。
+
+详细变更及验证边界见 [2026-11-09 更新说明](2026-11-09-update.md)。所有组现在统一沉降反馈，E 组原先独有的该项反馈不再作为组间差异。
 
 ## 在另一台电脑打包
 
@@ -22,7 +24,7 @@
 5. 按实验需要选择起始场景：Serene_Night_Experiment、Serene_Night_Exposure 或 Serene_Night_Music。当前默认起始场景仍是正念实验场景；构建列表本身不会自动依次播放所有场景。
 6. 在打包电脑构建 APK。新增构建检查会拦截缺少 Android OpenXR / Quest / Touch Pro 配置的构建，并提示执行上述菜单。
 
-此电脑未安装 Android 模块；按用户要求，没有启动 Unity、安装 Android 模块或构建 APK。配置菜单的实际执行与 Unity 完整导入验证留给打包电脑，因此当前不声称 Android Loader 设置资产已经生成。
+此电脑未安装 Android 模块；按用户要求，没有启动 Unity、安装 Android 模块或构建 APK。配置菜单的实际执行与 Unity 完整导入验证留给打包电脑，因此当前不声称 Android 平台配置、Shader 编译和完整构建已经验证通过。
 
 ## 已验证与未验证
 
@@ -37,7 +39,7 @@
 - 暴露场景测试远处任务目标、暂停/继续、结束体验；摘戴头显、控制器失去追踪再恢复后，不应留下按住状态。
 - 各 A–F 组检查显示时序、淡入/展开效果；C/F 背景模糊且问卷文字清晰。D/E/F 需要真实传感器事件才能继续，禁止把手柄点击当作真实吸气数据。
 - 使用相同场景、路线、画质和刷新率比较修改前后 CPU/GPU 帧时间、掉帧和温度；播放阶段与问卷阶段分别记录。72 Hz 的帧预算约 13.89 ms，90 Hz 约 11.11 ms；这些只是预算，不是实测结果。不要把 `Application.targetFrameRate` 当成 XR 头显刷新率的保证。
-- 若森林仍明显卡顿，下一步应根据 GPU/CPU 数据定位植被、透明材质、阴影或几何开销，再决定裁剪距离/LOD；本次没有批量删除场景对象或修改实验时长来掩盖问题。
+- 若森林仍明显卡顿，下一步应根据 GPU/CPU 数据定位植被、透明材质、阴影或几何开销，再决定裁剪距离/LOD；本轮已减少音乐场景植被并优化暴露场景透明材质；这些视觉取舍和统一沉降反馈需要记录为固定实验版本。
 
 ## 备份与参考
 
@@ -45,4 +47,4 @@
 
 参考开源方案：[Unity 官方 XRI 示例的 UI 交互](https://github.com/Unity-Technologies/XR-Interaction-Toolkit-Examples/blob/main/Documentation/UI-2D.md)、[Unity 官方 Meta OpenXR 示例](https://github.com/Unity-Technologies/mr-example-meta-openxr)。本次复用项目现有 XRI，未整体导入新示例项目。
 
-优化依据：[Unity 独立式 XR 的 URP 优化建议](https://docs.unity3d.com/Manual/xr-untethered-device-optimization.html)。具体配置 API 对照官方 Unity Registry 下载的 OpenXR 1.16.1 与 XR Management 4.4.0 源码。
+优化依据：[Unity 独立式 XR 的 URP 优化建议](https://docs.unity3d.com/Manual/xr-untethered-device-optimization.html)。具体配置 API 对照官方 Unity Registry 下载的 OpenXR 1.16.1 与 XR Management 4.6.1 源码。
