@@ -109,4 +109,4 @@ python "D:\unityprogramme\SereneNight_Test\Tools\PhysiologySync\align_recordings
 
 先检查了成熟的 [LSL4Unity](https://github.com/labstreaminglayer/LSL4Unity) 与 [LSL 时间同步说明](https://labstreaminglayer.readthedocs.io/info/time_synchronization.html)。本实现参考其“保留原始时间戳与校时测量”的原则，沿用当前工程已有 UDP 技术，不是 LSL 协议，也不直接与 LabRecorder 互通。Android 构建钩子补充了局域网通信需要的 [INTERNET 权限](https://developer.android.com/develop/connectivity/network-ops/connecting)。
 
-修改前备份位于交付包中的 `Before-fix`，部署文件位于交付包中的 `Patch`。本次尚未同步 GitHub。
+修改前备份位于交付包中的 `Before-fix`，部署文件位于交付包中的 `Patch`。GitHub 同步状态以仓库提交记录为准。
