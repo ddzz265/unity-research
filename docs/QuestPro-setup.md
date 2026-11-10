@@ -1,6 +1,6 @@
 # SereneNight_Test：Quest Pro 修改记录
 
-更新日期：2026-11-09。原项目：`D:\unityprogramme\SereneNight_Test`。
+更新日期：2026-11-10。原项目：`D:\unityprogramme\SereneNight_Test`。
 
 ## 已完成
 
@@ -28,7 +28,7 @@
 
 ## 已验证与未验证
 
-已使用项目现有 Unity 程序集和 Unity 随附 Roslyn 编译器，对整个运行时代码分别执行桌面条件及 `UNITY_ANDROID`（去掉 Editor/Standalone 条件）编译，两次均返回 0。Android 检查仍引用现有编辑器程序集，这能检出本次修改的 C# / Unity API 问题，但不能代替 Android 平台编译、IL2CPP 或设备执行。新编辑器配置脚本 API 已对照下载的官方包源码检查，尚未经过 Unity 包导入后的完整编译。三个实验场景的引用检查通过。
+已使用项目现有 Unity 程序集和 Unity 随附 Roslyn 编译器，对整个运行时代码分别执行桌面条件及 `UNITY_ANDROID`（去掉 Editor/Standalone 条件）编译，两次均返回 0。Android 检查仍引用现有编辑器程序集，这能检出本次修改的 C# / Unity API 问题，但不能代替 Android 平台编译、IL2CPP 或设备执行。编辑器构建脚本也已使用现有 Unity 程序集通过源码编译检查；仍未执行 Unity Android 完整导入、Gradle/IL2CPP 构建或真机验证。三个实验场景的引用检查通过。
 
 没有连接并读取实际头显的设备信息；Quest Pro 是用户确认的目标设备。程序启动会记录 `XR device model` 供真机核对。没有原始 APK、Profiler 录制或真机帧率，因此尚不能给出“卡顿已彻底解决”的结论。项目核心体验是三维场景加音频和移动路线，未在实验运行时代码中发现 VideoPlayer；本次没有把问题误判为视频解码卡顿。
 
@@ -48,3 +48,14 @@
 参考开源方案：[Unity 官方 XRI 示例的 UI 交互](https://github.com/Unity-Technologies/XR-Interaction-Toolkit-Examples/blob/main/Documentation/UI-2D.md)、[Unity 官方 Meta OpenXR 示例](https://github.com/Unity-Technologies/mr-example-meta-openxr)。本次复用项目现有 XRI，未整体导入新示例项目。
 
 优化依据：[Unity 独立式 XR 的 URP 优化建议](https://docs.unity3d.com/Manual/xr-untethered-device-optimization.html)。具体配置 API 对照官方 Unity Registry 下载的 OpenXR 1.16.1 与 XR Management 4.6.1 源码。
+
+
+## 2026-11-10：问卷、转头延迟与同步记录
+
+- 三个实验场景共享 17 道问卷题，所有题目均为 1–7 分；Q1、Q2、C1 的端点说明已相应调整。
+- Android Quest 构建时启用 Late Latching；正念播放时标记追踪头部供渲染前姿态修正使用，不添加头部平滑或改变路线。此项不代表已证明转头卡顿的唯一根因，也不是零掉帧保证。
+- 眼动 CSV 格式化移至后台，保留原来的 41 列；新增呼吸、校时与会话文件，通过同前缀关联。
+- 电脑中转程序位于 `Tools/PhysiologySync`；真实呼吸带的厂商接口尚待型号确定后接入。记录链路不调用 `NotifyInhalation()`，D/E/F 仍需要经过验证的真实吸气事件。
+- Android 清单新增局域网通信所需的 INTERNET 权限。没有呼吸数据时仅记录状态，不写入模拟样本。
+
+详细协议、使用方法及数据有效性限制见 [同步记录说明](../Tools/PhysiologySync/README.md)；本轮验证情况见 [更新记录](2026-11-10-update.md)。修改后需要重新构建 APK，已安装的旧 APK 不会自动更新。

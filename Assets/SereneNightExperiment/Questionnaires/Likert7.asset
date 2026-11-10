@@ -190,6 +190,38 @@ MonoBehaviour:
     labelForMinScore: "1 = \u5b8c\u5168\u4e0d\u540c\u610f"
     labelForMaxScore: "7 = \u5b8c\u5168\u540c\u610f"
     canSkipQuestion: 0
+  - question: "\u6211\u89c9\u5f97\u95ee\u5377\u51fa\u73b0\u65f6\u7684\u89c6\u89c9\u53d8\u5316\u662f\u8212\u9002\u7684\u3002"
+    choicesType: 1
+    choiceLabels:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    minScore: 1
+    maxScore: 7
+    wholeNumber: 1
+    labelForMinScore: "1 = \u5b8c\u5168\u4e0d\u540c\u610f"
+    labelForMaxScore: "7 = \u5b8c\u5168\u540c\u610f"
+    canSkipQuestion: 0
+  - question: "\u6211\u559c\u6b22\u521a\u624d\u8fd9\u79cd\u95ee\u5377\u51fa\u73b0\u65b9\u5f0f\u3002"
+    choicesType: 1
+    choiceLabels:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    minScore: 1
+    maxScore: 7
+    wholeNumber: 1
+    labelForMinScore: "1 = \u5b8c\u5168\u4e0d\u540c\u610f"
+    labelForMaxScore: "7 = \u5b8c\u5168\u540c\u610f"
+    canSkipQuestion: 0
   - question: "\u6b64\u523b\u4f60\u611f\u5230\u591a\u5927\u7a0b\u5ea6\u7684 VR \u76f8\u5173\u4e0d\u9002\uff0c\u4f8b\u5982\u7729\u6655\u3001\u6076\u5fc3\u6216\u773c\u90e8\u4e0d\u9002\uff1f"
     choicesType: 1
     choiceLabels:
@@ -206,7 +238,39 @@ MonoBehaviour:
     labelForMinScore: "1 = \u5b8c\u5168\u6ca1\u6709"
     labelForMaxScore: "7 = \u975e\u5e38\u4e25\u91cd"
     canSkipQuestion: 0
-  - question: "\u6211\u559c\u6b22\u521a\u624d\u8fd9\u79cd\u95ee\u5377\u51fa\u73b0\u65b9\u5f0f\u3002"
+  - question: "\u9009\u9879\u88ab\u9009\u4e2d\u540e\u7684\u89c6\u89c9\u53d8\u5316\uff0c\u8ba9\u6211\u611f\u5230\u7a81\u5140\u3002"
+    choicesType: 1
+    choiceLabels:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    minScore: 1
+    maxScore: 7
+    wholeNumber: 1
+    labelForMinScore: "1 = \u5b8c\u5168\u4e0d\u540c\u610f"
+    labelForMaxScore: "7 = \u5b8c\u5168\u540c\u610f"
+    canSkipQuestion: 0
+  - question: "\u770b\u5230\u9009\u4e2d\u53cd\u9988\u65f6\uff0c\u6211\u611f\u89c9\u81ea\u5df1\u4e0e\u539f\u6765\u573a\u666f\u4f53\u9a8c\u7684\u8054\u7cfb\u88ab\u6253\u65ad\u4e86\u3002"
+    choicesType: 1
+    choiceLabels:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    minScore: 1
+    maxScore: 7
+    wholeNumber: 1
+    labelForMinScore: "1 = \u5b8c\u5168\u4e0d\u540c\u610f"
+    labelForMaxScore: "7 = \u5b8c\u5168\u540c\u610f"
+    canSkipQuestion: 0
+  - question: "\u770b\u5230\u9009\u4e2d\u53cd\u9988\u540e\uff0c\u6211\u80fd\u6e05\u695a\u5224\u65ad\u81ea\u5df1\u7684\u7b54\u6848\u5df2\u7ecf\u88ab\u9009\u4e2d\u3002"
     choicesType: 1
     choiceLabels:
     - 1

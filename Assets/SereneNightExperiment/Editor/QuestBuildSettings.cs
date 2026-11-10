@@ -48,6 +48,7 @@ public sealed class QuestBuildSettings : IPreprocessBuildWithReport
         var pro=settings.GetFeature<MetaQuestTouchProControllerProfile>();
         if(!quest || !touch || !pro)throw new InvalidOperationException("Required Quest OpenXR features are missing.");
         quest.enabled=touch.enabled=pro.enabled=true;
+        EnableLateLatching(quest);
         var eye=settings.GetFeature<EyeGazeInteraction>();
         if(!eye)throw new InvalidOperationException("Eye Gaze Interaction Profile is missing.");
         eye.enabled=true;EditorUtility.SetDirty(eye);
@@ -96,6 +97,15 @@ public sealed class QuestBuildSettings : IPreprocessBuildWithReport
         AssetDatabase.SaveAssets();
     }
 
+    static void EnableLateLatching(MetaQuestFeature quest)
+    {
+        // OpenXR's Meta build hook writes this serialized option to xr-latelatching-enabled.
+        var config=new SerializedObject(quest);
+        var option=config.FindProperty("lateLatchingMode");
+        if(option==null)throw new BuildFailedException("The installed Meta Quest OpenXR feature does not expose Late Latching.");
+        option.boolValue=true;config.ApplyModifiedPropertiesWithoutUndo();EditorUtility.SetDirty(quest);
+    }
+
     public void OnPreprocessBuild(BuildReport report)
     {
         if(report.summary.platform!=BuildTarget.Android)return;
@@ -109,5 +119,6 @@ public sealed class QuestBuildSettings : IPreprocessBuildWithReport
             !settings.GetFeature<MetaQuestFeature>().enabled || !settings.GetFeature<MetaQuestTouchProControllerProfile>() ||
             !settings.GetFeature<MetaQuestTouchProControllerProfile>().enabled)
             throw new BuildFailedException("Run Serene Night > Configure Quest Pro (Android) before building the headset APK.");
+        EnableLateLatching(settings.GetFeature<MetaQuestFeature>());
     }
 }

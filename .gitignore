@@ -144,3 +144,7 @@ crashlytics-build.properties
 *.keystore
 *.jks
 
+
+# Python cache for the PC physiology tools
+/Tools/**/__pycache__/
+/Tools/**/*.py[cod]

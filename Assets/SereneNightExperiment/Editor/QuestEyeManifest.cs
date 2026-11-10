@@ -17,6 +17,7 @@ public sealed class QuestEyeManifest : OpenXRFeatureBuildHooks
         string file=Path.Combine(path,"src/main/AndroidManifest.xml");
         var doc=new XmlDocument();doc.Load(file);
         Add(doc,"uses-permission","com.oculus.permission.EYE_TRACKING",false);
+        Add(doc,"uses-permission","android.permission.INTERNET",false);
         Add(doc,"uses-feature","oculus.software.eye_tracking",true);
         doc.Save(file);
     }

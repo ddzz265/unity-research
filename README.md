@@ -48,3 +48,13 @@ Open `Assets/Scenes/Serene_Night_Experiment.unity`, select **Experiment Group Co
 The mindfulness route follows the selected clip's actual sample duration and DSP playback progress. Only group E uses settling feedback (9 UI units, 0.45 sec), without a central selected dot; A/B/C/D/F retain ordinary selection marks without sinking. The questionnaire is centred on the current gaze when shown, with head roll removed and a one-time pre-render pose correction. Camera motion blur in the mindfulness forest is disabled to remove its rotation-induced smearing. Other timing triggers and answer logging are preserved.
 
 See [2026-11-09 scene, interaction, performance and audio updates](docs/2026-11-09-update.md) for details and experimental-variable changes. These changes have passed conditional C# compilation and data/audio checks; Android shader compilation, APK building and Quest Pro visual/performance validation remain pending.
+
+## Questionnaire, head tracking and physiological recording update
+
+The shared questionnaire now contains **17 single-choice items, all scored 1–7**, including revised endpoints for Q1, Q2 and C1. Only group E uses settling feedback; the existing audio, routes and A–F presentation rules are preserved.
+
+Quest Android builds enable native late latching; mindfulness playback marks the tracked head before rendering. Eye CSV formatting runs on the background writer. These changes target latency and main-thread work; device performance is not yet verified.
+
+Eye and respiration recording now share a session identifier and an estimated application time axis. A PC forwards real belt samples over a trusted LAN; raw timestamps, clock exchanges, signal loss and sequence gaps are retained. **A belt-specific acquisition adapter is still required.** No simulated respiration is generated, and recording does not trigger the D/E/F inhalation gate.
+
+See [the 2026-11-10 update and validation limits](docs/2026-11-10-update.md) and [PC bridge and recording instructions](Tools/PhysiologySync/README.md). Runtime desktop/Android conditional compilation, editor compilation and four software test groups passed. Android APK building, real-belt/Quest testing, physical synchronization accuracy and headset frame timing remain unverified.
